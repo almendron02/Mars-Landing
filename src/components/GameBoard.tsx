@@ -165,20 +165,39 @@ export default function GameBoard({ gameState }: GameBoardProps) {
   const handleCardClick = (id: string) => {
     // Clear any previous result so player can mix fresh
     setLastResult(null);
-
-    if (slot1 === id) {
-      setSlot1(null);
-    } else if (slot2 === id) {
-      setSlot2(null);
-    } else if (!slot1) {
-      setSlot1(id);
-    } else if (!slot2) {
-      setSlot2(id);
-    } else {
-      // Replace slot 2 if both full
-      setSlot2(id);
-    }
     setCombineFeedback(null);
+
+    const current: string[] = [];
+    if (slot1) current.push(slot1);
+    if (slot2) current.push(slot2);
+
+    const count = current.filter((x) => x === id).length;
+
+    if (count === 0) {
+      if (current.length < 2) {
+        current.push(id);
+      } else {
+        // Both slots are full. Shift Slot 2 into Slot 1 and place the new element in Slot 2.
+        current[0] = current[1];
+        current[1] = id;
+      }
+    } else if (count === 1) {
+      if (current.length === 1) {
+        // Only 1 slot is occupied, and it is this element. Select it twice.
+        current.push(id);
+      } else {
+        // 2 slots are occupied, one is the tapped element, and the other is a different element.
+        // Replace the other element so both slots become this element.
+        current[0] = id;
+        current[1] = id;
+      }
+    } else if (count === 2) {
+      // Already selected twice. Third tap fully clears this element from the workshop.
+      current.length = 0;
+    }
+
+    setSlot1(current[0] || null);
+    setSlot2(current[1] || null);
   };
 
   const handleClearSlot = (slot: 1 | 2) => {
