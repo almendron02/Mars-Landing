@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-brand-bg: #F5EDE2;
+  --color-brand-card: #FBF6EE;
+  --color-brand-paper: #FDF8F0;
+  --color-brand-ink: #24211E;
+  --color-brand-muted: #76695C;
+  --color-brand-border: #D9C3AA;
+  
+  --color-brand-primary: #C96F4A;
+  --color-brand-primary-hover: #B25A38;
+  --color-brand-secondary: #8DAE69;
+  --color-brand-tertiary: #97ACC7;
+  --color-brand-tan: #E9D8C3;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-brand-bg);
+  color: var(--color-brand-ink);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+}
+
+button {
+  font-family: var(--font-sans);
+}
+
+/* Hide scrollbars for elegant sliders */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+

@@ -1,0 +1,6 @@
+{
+  "name": "Fly to Mars",
+  "description": "A cozy alchemy game where your goal is to combine elements, unlock science, and find a way to fly to Mars!",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
