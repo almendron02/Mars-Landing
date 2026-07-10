@@ -201,12 +201,32 @@ export function useAudio(
     bgmOscillators = [];
   }, []);
 
+  const updateVolume = useCallback((v: number) => {
+    volumeRef.current = v;
+  }, []);
+
+  const updateMutedMusic = useCallback((muted: boolean) => {
+    isMutedMusicRef.current = muted;
+    if (muted) {
+      stopBgm();
+    } else {
+      startBgm();
+    }
+  }, [stopBgm, startBgm]);
+
+  const updateMutedSfx = useCallback((muted: boolean) => {
+    isMutedSfxRef.current = muted;
+  }, []);
+
   return {
     playNewDiscovery,
     playFailedCombination,
     playAchievement,
     playWinning,
     startBgm,
-    stopBgm
+    stopBgm,
+    updateVolume,
+    updateMutedMusic,
+    updateMutedSfx
   };
 }

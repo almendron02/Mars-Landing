@@ -31,34 +31,18 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
   const [volume, setVolume] = useState<number>(savedState.volume);
   const [isActive, setIsActive] = useState<boolean>(savedState.isActive);
 
-  // Guard ref to handle state reset timing safely
-  const isResettingRef = useRef<boolean>(false);
-
   // Notifications
   const [newDiscoveryToast, setNewDiscoveryToast] = useState<Element | null>(null);
   const [newAchievementToast, setNewAchievementToast] = useState<Achievement | null>(null);
 
+  // Menu modal overlay state
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+
   // Timer
-  const { elapsedTime, setElapsedTime, resetTimer } = useTimer(isActive && !hasWon, savedState.elapsedTime);
+  const { elapsedTime, setElapsedTime, resetTimer } = useTimer(isActive && !hasWon && !isMenuOpen, savedState.elapsedTime);
 
   // Sync back to local storage whenever state updates
   useEffect(() => {
-    if (isResettingRef.current) {
-      // Check if all primary memory states have finished resetting
-      if (
-        discoveredElements.length === STARTING_ELEMENTS.length &&
-        unlockedAchievements.length === 0 &&
-        elapsedTime === 0 &&
-        !hasWon &&
-        isActive
-      ) {
-        isResettingRef.current = false;
-      } else {
-        // Skip syncing intermediate stale states
-        return;
-      }
-    }
-
     setSavedState({
       discoveredElements,
       achievements: unlockedAchievements,
@@ -71,13 +55,26 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
     });
   }, [discoveredElements, unlockedAchievements, elapsedTime, isMutedMusic, isMutedSfx, volume, hasWon, isActive, setSavedState]);
 
+  // Synchronize audio hook whenever settings change
+  useEffect(() => {
+    audio.updateVolume?.(volume);
+  }, [volume, audio]);
+
+  useEffect(() => {
+    audio.updateMutedMusic?.(isMutedMusic);
+  }, [isMutedMusic, audio]);
+
+  useEffect(() => {
+    audio.updateMutedSfx?.(isMutedSfx);
+  }, [isMutedSfx, audio]);
+
   // Pause & Resume
   const pauseGame = useCallback(() => {
-    setIsActive(false);
+    setIsMenuOpen(true);
   }, []);
 
   const resumeGame = useCallback(() => {
-    setIsActive(true);
+    setIsMenuOpen(false);
   }, []);
 
   // Check achievements after discovery
@@ -184,7 +181,6 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
 
   // Matches
   const startNewGame = useCallback(() => {
-    isResettingRef.current = true;
     try {
       window.localStorage.removeItem(LOCAL_STORAGE_KEY);
     } catch (e) {
@@ -195,6 +191,7 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
     setHasWon(false);
     resetTimer(0);
     setIsActive(true);
+    setIsMenuOpen(false);
     setNewDiscoveryToast(null);
     setNewAchievementToast(null);
     setSavedState({
@@ -225,7 +222,7 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
     volume,
     hasWon,
     isActive,
-    isMenuOpen: !isActive && !hasWon, // Simple abstraction
+    isMenuOpen,
     hasSavedMatch,
     newDiscoveryToast,
     setNewDiscoveryToast,
