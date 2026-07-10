@@ -25,29 +25,7 @@ export function useAudio(
   const isMutedMusicRef = useRef(isMutedMusic);
   const isMutedSfxRef = useRef(isMutedSfx);
 
-  useEffect(() => {
-    volumeRef.current = volume;
-  }, [volume]);
 
-  useEffect(() => {
-    isMutedMusicRef.current = isMutedMusic;
-    if (isMutedMusic) {
-      stopBgm();
-    } else {
-      startBgm();
-    }
-  }, [isMutedMusic]);
-
-  useEffect(() => {
-    isMutedSfxRef.current = isMutedSfx;
-  }, [isMutedSfx]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      stopBgm();
-    };
-  }, []);
 
   // SYNTHESIZE SOUNDS
   const playTone = useCallback((freqs: number[], duration: number, type: OscillatorType = 'sine', staggerMs = 0) => {
@@ -203,6 +181,19 @@ export function useAudio(
 
   const updateVolume = useCallback((v: number) => {
     volumeRef.current = v;
+    // Update the gain nodes of currently playing BGM oscillators instantly
+    bgmOscillators.forEach(({ gain }) => {
+      try {
+        if (audioCtx) {
+          const now = audioCtx.currentTime;
+          // Soft triangle pad volume is 0.03 * volume
+          gain.gain.setValueAtTime(gain.gain.value, now);
+          gain.gain.linearRampToValueAtTime(0.03 * v, now + 0.15);
+        }
+      } catch (e) {
+        console.warn('Failed to update active gain node', e);
+      }
+    });
   }, []);
 
   const updateMutedMusic = useCallback((muted: boolean) => {
@@ -217,6 +208,52 @@ export function useAudio(
   const updateMutedSfx = useCallback((muted: boolean) => {
     isMutedSfxRef.current = muted;
   }, []);
+
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    isMutedMusicRef.current = isMutedMusic;
+    if (isMutedMusic) {
+      stopBgm();
+    } else {
+      startBgm();
+    }
+  }, [isMutedMusic, startBgm, stopBgm]);
+
+  useEffect(() => {
+    isMutedSfxRef.current = isMutedSfx;
+  }, [isMutedSfx]);
+
+  // Cleanup on unmount & Mobile Audio Context Unlocking
+  useEffect(() => {
+    const handleUnlock = () => {
+      try {
+        const ctx = getAudioContext();
+        if (ctx && ctx.state === 'suspended') {
+          ctx.resume().then(() => {
+            console.log('AudioContext successfully unlocked on mobile!');
+            // If music is enabled, start playing
+            if (!isMutedMusicRef.current && !bgmInterval) {
+              startBgm();
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Unable to resume AudioContext from gesture:', e);
+      }
+    };
+
+    window.addEventListener('click', handleUnlock);
+    window.addEventListener('touchstart', handleUnlock, { passive: true });
+
+    return () => {
+      stopBgm();
+      window.removeEventListener('click', handleUnlock);
+      window.removeEventListener('touchstart', handleUnlock);
+    };
+  }, [startBgm, stopBgm]);
 
   return {
     playNewDiscovery,

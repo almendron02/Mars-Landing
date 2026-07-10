@@ -90,12 +90,10 @@ export default function GameBoard({ gameState }: GameBoardProps) {
     });
   }, [discoveredObjects, selectedEra, searchQuery]);
 
-  // Limit elements to 12 for the main preview grid
-  const previewElements = useMemo(() => {
-    return filteredElements.slice(0, 12);
-  }, [filteredElements]);
+  // Do not limit elements for the main preview grid
+  const previewElements = filteredElements;
 
-  const hasMoreThan12 = filteredElements.length > 12;
+  const hasMoreThan12 = false;
 
   // Dynamic progression hint
   const dynamicHint = useMemo(() => {
