@@ -181,19 +181,6 @@ export function useAudio(
 
   const updateVolume = useCallback((v: number) => {
     volumeRef.current = v;
-    // Update the gain nodes of currently playing BGM oscillators instantly
-    bgmOscillators.forEach(({ gain }) => {
-      try {
-        if (audioCtx) {
-          const now = audioCtx.currentTime;
-          // Soft triangle pad volume is 0.03 * volume
-          gain.gain.setValueAtTime(gain.gain.value, now);
-          gain.gain.linearRampToValueAtTime(0.03 * v, now + 0.15);
-        }
-      } catch (e) {
-        console.warn('Failed to update active gain node', e);
-      }
-    });
   }, []);
 
   const updateMutedMusic = useCallback((muted: boolean) => {
