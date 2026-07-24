@@ -6,7 +6,7 @@
 
 A cozy, mobile-first alchemy game where every discovery moves humanity from nature and early life to science, industry, space travel, and a successful landing on Mars.
 
-[**Play the Game**](https://marslandin.netlify.app)
+[**Play the Game**](https://mars.formawebsite.com)
 
 ![React](https://img.shields.io/badge/React-19-20232A?logo=react\&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript\&logoColor=white)
