@@ -131,7 +131,7 @@ export default function CombinePanel({
               </motion.div>
             ) : (
               <div className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-brand-border rounded-xl bg-brand-card/30 text-brand-muted/40 p-1 text-center select-none">
-                <span className="text-base">➕</span>
+                <PixelIcon id="add" size={18} className="opacity-40" />
               </div>
             )}
           </AnimatePresence>
@@ -171,7 +171,7 @@ export default function CombinePanel({
               </motion.div>
             ) : (
               <div className="flex flex-col items-center justify-center w-full h-full border-2 border-dashed border-brand-border rounded-xl bg-brand-card/30 text-brand-muted/40 p-1 text-center select-none">
-                <span className="text-base">➕</span>
+                <PixelIcon id="add" size={18} className="opacity-40" />
               </div>
             )}
           </AnimatePresence>
@@ -262,9 +262,10 @@ export default function CombinePanel({
               initial={{ opacity: 0, y: -3 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 3 }}
-              className="text-[10px] text-brand-primary font-black uppercase tracking-widest"
+              className="text-[10px] text-brand-primary font-black uppercase tracking-widest flex items-center gap-1"
             >
-              💨 No reaction
+              <PixelIcon id="air" size={12} />
+              No reaction
             </motion.span>
           )}
           {combineFeedback === 'success' && resultElement && (
@@ -275,7 +276,8 @@ export default function CombinePanel({
               exit={{ opacity: 0, y: 3 }}
               className="text-[10px] text-brand-secondary font-black uppercase tracking-widest flex items-center gap-1"
             >
-              ✨ Discovered {resultElement.name}!
+              <PixelIcon id="energy" size={12} />
+              Discovered {resultElement.name}!
             </motion.span>
           )}
         </AnimatePresence>

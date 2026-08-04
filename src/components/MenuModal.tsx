@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, RotateCcw, Trophy, Settings, X, CheckCircle2, Lock } from 'lucide-react';
+import { Play, RotateCcw, Settings, X } from 'lucide-react';
 import AudioControls from './AudioControls';
-import { ACHIEVEMENTS } from '../data/achievements';
+import PixelIcon from './PixelIcon';
 
 interface MenuModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRestart: () => void;
-  unlockedAchievements: string[];
   isMutedMusic: boolean;
   isMutedSfx: boolean;
   volume: number;
@@ -21,7 +20,6 @@ export default function MenuModal({
   isOpen,
   onClose,
   onRestart,
-  unlockedAchievements,
   isMutedMusic,
   isMutedSfx,
   volume,
@@ -29,7 +27,59 @@ export default function MenuModal({
   toggleSfx,
   changeVolume
 }: MenuModalProps) {
-  const [activeTab, setActiveTab] = useState<'settings' | 'achievements'>('settings');
+  const [activeTab, setActiveTab] = useState<'settings' | 'tutorial' | 'developer'>('settings');
+  const tutorialSteps = [
+    {
+      number: '01',
+      icon: 'bag',
+      title: 'Tap two element cards',
+      cue: 'Selected elements move into the two workshop slots.',
+    },
+    {
+      number: '02',
+      icon: 'add',
+      title: 'Fill both slots',
+      cue: 'The mix button is ready only when both slots have an element.',
+    },
+    {
+      number: '03',
+      icon: 'energy',
+      title: 'Press Mix',
+      cue: 'A valid pair reacts and creates a new discovery.',
+    },
+    {
+      number: '04',
+      icon: 'recipes',
+      title: 'Repeat the chain',
+      cue: 'New discoveries stay in your bag and become ingredients.',
+    },
+  ];
+  const developerLinks = [
+    {
+      number: '01',
+      icon: 'computer',
+      title: 'LinkedIn signal',
+      cue: 'Professional coordinates, work history, and the cleanest route to start a conversation.',
+      href: 'https://linkedin.com/in/angelgonzalez02',
+      action: 'Open LinkedIn',
+    },
+    {
+      number: '02',
+      icon: 'machine',
+      title: 'GitHub machine room',
+      cue: 'Source code, commits, experiments, and proof that the gears actually turn.',
+      href: 'https://github.com/almendron02',
+      action: 'Open GitHub',
+    },
+    {
+      number: '03',
+      icon: 'energy',
+      title: 'Portfolio launchpad',
+      cue: 'Shipped work, polished builds, and the fastest way to inspect the mission archive.',
+      href: 'https://formawebsite.com',
+      action: 'Open Portfolio',
+    },
+  ];
 
   return (
     <AnimatePresence>
@@ -44,8 +94,9 @@ export default function MenuModal({
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b-2 border-brand-ink/10 bg-brand-paper">
-              <h2 className="text-xl font-serif font-black text-brand-ink uppercase tracking-wide">
-                ✦ Mars Landing ✦
+              <h2 className="text-xl font-serif font-black text-brand-ink uppercase tracking-wide flex items-center gap-2">
+                <PixelIcon id="mars" size={22} />
+                Mars Landing
               </h2>
               <button
                 id="btn-close-menu"
@@ -57,11 +108,11 @@ export default function MenuModal({
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex px-6 border-b border-brand-ink/10 bg-brand-paper/50">
+            <div className="flex px-4 border-b border-brand-ink/10 bg-brand-paper/50">
               <button
                 id="tab-settings"
                 onClick={() => setActiveTab('settings')}
-                className={`flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer
+                className={`flex items-center gap-2 py-3 px-2.5 text-xs sm:text-sm font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer
                   ${activeTab === 'settings'
                     ? 'border-brand-primary text-brand-primary'
                     : 'border-transparent text-brand-ink/60 hover:text-brand-ink'
@@ -69,20 +120,33 @@ export default function MenuModal({
                 `}
               >
                 <Settings size={14} />
-                Mission Info
+                Pause
               </button>
               <button
-                id="tab-achievements"
-                onClick={() => setActiveTab('achievements')}
-                className={`flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer
-                  ${activeTab === 'achievements'
+                id="tab-tutorial"
+                onClick={() => setActiveTab('tutorial')}
+                className={`flex items-center gap-2 py-3 px-2.5 text-xs sm:text-sm font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer
+                  ${activeTab === 'tutorial'
                     ? 'border-brand-primary text-brand-primary'
                     : 'border-transparent text-brand-ink/60 hover:text-brand-ink'
                   }
                 `}
               >
-                <Trophy size={14} />
-                Awards ({unlockedAchievements.length})
+                <PixelIcon id="hints" size={14} />
+                Tutorial
+              </button>
+              <button
+                id="tab-developer"
+                onClick={() => setActiveTab('developer')}
+                className={`flex items-center gap-2 py-3 px-2.5 text-xs sm:text-sm font-black uppercase tracking-wider border-b-2 transition-all cursor-pointer
+                  ${activeTab === 'developer'
+                    ? 'border-brand-primary text-brand-primary'
+                    : 'border-transparent text-brand-ink/60 hover:text-brand-ink'
+                  }
+                `}
+              >
+                <PixelIcon id="astronaut" size={14} />
+                Developer
               </button>
             </div>
 
@@ -90,19 +154,6 @@ export default function MenuModal({
             <div className="flex-1 overflow-y-auto p-6 bg-brand-card">
               {activeTab === 'settings' ? (
                 <div className="flex flex-col gap-6">
-                  {/* Mission & Goal Section */}
-                  <div className="bg-brand-paper border-2 border-brand-ink rounded-2xl p-4 flex flex-col gap-2 shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)]">
-                    <span className="text-[10px] uppercase font-black tracking-widest text-brand-primary">
-                      The Grand Goal
-                    </span>
-                    <h3 className="text-sm font-serif font-black text-brand-ink uppercase tracking-wide">
-                      Find a Way to Fly to Mars!
-                    </h3>
-                    <p className="text-xs text-brand-ink/90 leading-relaxed font-medium">
-                      In this cozy science craft game, your mission is to discover high-tech concepts from scratch. Starting with basic natural elements, combine them into life forms, then build tools, discover electricity, progress heavy industry, and finally synthesize a space rocket to transport humanity safely to Mars!
-                    </p>
-                  </div>
-
                   {/* Primary Game Controls */}
                   <div className="flex flex-col gap-3.5">
                     <button
@@ -112,6 +163,15 @@ export default function MenuModal({
                     >
                       <Play size={16} fill="currentColor" />
                       Resume Playing
+                    </button>
+
+                    <button
+                      id="btn-open-tutorial"
+                      onClick={() => setActiveTab('tutorial')}
+                      className="w-full flex items-center justify-center gap-2 bg-brand-paper hover:bg-brand-bg border-2 border-brand-ink text-brand-ink font-extrabold uppercase tracking-widest py-3 rounded-xl shadow-[2px_2.5px_0px_0px_rgba(36,33,30,1)] hover:translate-y-[1px] hover:shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)] active:scale-[0.98] cursor-pointer transition-all"
+                    >
+                      <PixelIcon id="hints" size={16} />
+                      Tutorial
                     </button>
 
                     <button
@@ -144,59 +204,147 @@ export default function MenuModal({
                     />
                   </div>
                 </div>
-              ) : (
-                /* Achievements List */
-                <div className="flex flex-col gap-3">
-                  {ACHIEVEMENTS.map((ach) => {
-                    const isUnlocked = unlockedAchievements.includes(ach.id);
-                    return (
-                      <div
-                        key={ach.id}
-                        id={`achievement-item-${ach.id}`}
-                        className={`flex items-start gap-3.5 p-3.5 rounded-2xl border-2 transition-all
-                          ${isUnlocked
-                            ? 'bg-brand-secondary/10 border-brand-secondary/40 text-brand-ink font-semibold'
-                            : 'bg-brand-bg/40 border-brand-border/60 opacity-60 text-brand-ink/80'
-                          }
-                        `}
-                      >
-                        {/* Trophy Icon */}
-                        <div className={`flex items-center justify-center w-10 h-10 rounded-full shrink-0 shadow-sm border
-                          ${isUnlocked 
-                            ? 'bg-brand-secondary/20 border-brand-secondary text-brand-secondary' 
-                            : 'bg-brand-bg text-brand-ink/30 border-brand-border'
-                          }
-                        `}>
-                           {isUnlocked ? (
-                             <Trophy size={18} fill="currentColor" />
-                           ) : (
-                             <Lock size={16} />
-                           )}
+              ) : activeTab === 'tutorial' ? (
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center gap-3 border-b-2 border-brand-ink/10 pb-4">
+                    <div className="w-12 h-12 shrink-0 flex items-center justify-center bg-brand-paper border-2 border-brand-ink rounded-xl shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)]">
+                      <PixelIcon id="rocket" size={30} />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] uppercase font-black tracking-widest text-brand-primary">
+                        How To Play
+                      </span>
+                      <h3 className="text-sm font-serif font-black text-brand-ink uppercase tracking-wide mt-0.5">
+                        Follow the arrows. Build the chain.
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    {tutorialSteps.map((step, index) => (
+                      <div key={step.number} className="relative flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 flex items-center justify-center bg-brand-ink text-white border-2 border-brand-ink rounded-lg text-[10px] font-black shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)]">
+                            {step.number}
+                          </div>
+                          {index < tutorialSteps.length - 1 && (
+                            <div className="flex-1 min-h-12 w-0.5 bg-brand-border my-1" />
+                          )}
                         </div>
 
-                        {/* Title and Condition */}
-                        <div className="flex-1 flex flex-col gap-0.5">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-bold text-sm text-brand-ink">
-                              {ach.name}
-                            </h4>
-                            {isUnlocked ? (
-                              <span className="text-brand-secondary flex items-center gap-0.5 text-[10px] font-bold uppercase tracking-wider">
-                                <CheckCircle2 size={12} /> Earned
-                              </span>
-                            ) : (
-                              <span className="text-brand-ink/40 flex items-center gap-0.5 text-[10px] font-bold uppercase tracking-wider">
-                                <Lock size={10} /> Locked
-                              </span>
-                            )}
+                        <div className="flex-1 pb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 shrink-0 flex items-center justify-center bg-brand-paper border-2 border-brand-border rounded-xl">
+                              <PixelIcon id={step.icon} size={28} />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-xs font-black uppercase tracking-wider text-brand-ink">
+                                {step.title}
+                              </h4>
+                              <p className="text-[11px] text-brand-muted leading-relaxed font-semibold mt-0.5">
+                                {step.cue}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-xs text-brand-ink/70 leading-normal font-medium">
-                            {ach.description}
-                          </p>
+
+                          {index < tutorialSteps.length - 1 && (
+                            <div className="ml-14 mt-2 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-brand-primary">
+                              <PixelIcon id="arrow-right" size={15} className="rotate-90" />
+                              Next
+                            </div>
+                          )}
                         </div>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-3 border-t-2 border-brand-ink/10 pt-4">
+                    <div className="w-12 h-12 shrink-0 flex items-center justify-center bg-brand-secondary/20 border-2 border-brand-secondary rounded-xl">
+                      <PixelIcon id="mars" size={30} />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-brand-ink">
+                        Final destination: Mars Landing
+                      </h4>
+                      <p className="text-[11px] text-brand-muted leading-relaxed font-semibold mt-0.5">
+                        Keep chaining discoveries until you can build a rocket and send a space mission to Mars.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    id="btn-back-to-pause"
+                    onClick={() => setActiveTab('settings')}
+                    className="w-full flex items-center justify-center gap-2 bg-brand-card hover:bg-brand-paper border-2 border-brand-ink text-brand-ink font-extrabold uppercase tracking-widest py-3 rounded-xl shadow-[2px_2.5px_0px_0px_rgba(36,33,30,1)] hover:translate-y-[1px] hover:shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)] active:scale-[0.98] cursor-pointer transition-all"
+                  >
+                    Back to Pause
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center gap-3 border-b-2 border-brand-ink/10 pb-4">
+                    <div className="w-12 h-12 shrink-0 flex items-center justify-center bg-brand-paper border-2 border-brand-ink rounded-xl shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)]">
+                      <PixelIcon id="astronaut" size={30} />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] uppercase font-black tracking-widest text-brand-primary">
+                        Mission Architect
+                      </span>
+                      <h3 className="text-sm font-serif font-black text-brand-ink uppercase tracking-wide mt-0.5">
+                        Angel Gonzalez
+                      </h3>
+                      <p className="text-[11px] text-brand-muted leading-relaxed font-semibold mt-1">
+                        Combines design, code, and stubborn debugging until rough elements become shipped products.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    {developerLinks.map((link, index) => (
+                      <div key={link.number} className="relative flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 flex items-center justify-center bg-brand-ink text-white border-2 border-brand-ink rounded-lg text-[10px] font-black shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)]">
+                            {link.number}
+                          </div>
+                          {index < developerLinks.length - 1 && (
+                            <div className="flex-1 min-h-12 w-0.5 bg-brand-border my-1" />
+                          )}
+                        </div>
+
+                        <div className="flex-1 pb-4">
+                          <a
+                            href={link.href}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="group flex items-center gap-3 rounded-xl border-2 border-brand-border bg-brand-paper p-3 transition-all hover:border-brand-ink hover:bg-brand-bg active:scale-[0.99]"
+                          >
+                            <div className="w-12 h-12 shrink-0 flex items-center justify-center bg-brand-card border border-brand-border rounded-xl">
+                              <PixelIcon id={link.icon} size={28} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-xs font-black uppercase tracking-wider text-brand-ink">
+                                {link.title}
+                              </h4>
+                              <p className="text-[11px] text-brand-muted leading-relaxed font-semibold mt-0.5">
+                                {link.cue}
+                              </p>
+                              <span className="mt-2 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-brand-primary">
+                                {link.action}
+                                <PixelIcon id="arrow-right" size={12} className="transition-transform group-hover:translate-x-0.5" />
+                              </span>
+                            </div>
+                          </a>
+
+                          {index < developerLinks.length - 1 && (
+                            <div className="ml-14 mt-2 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-brand-primary">
+                              <PixelIcon id="arrow-right" size={15} className="rotate-90" />
+                              Next contact route
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -204,7 +352,7 @@ export default function MenuModal({
             {/* Bottom Footer */}
             <div className="px-6 py-4 border-t-2 border-brand-ink/10 bg-brand-bg/80 text-center">
               <p className="text-[10px] text-brand-ink/50 font-bold uppercase tracking-widest">
-                Mars Landing © 2026 • Relax, explore, and let science flourish.
+                Mars Landing 2026 | Mission systems online.
               </p>
             </div>
           </motion.div>

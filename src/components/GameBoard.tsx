@@ -1,10 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  X, Sparkles, RefreshCw, Star, ArrowRight, HelpCircle, BookOpen, 
-  Briefcase, Award, Music, Volume2, ShieldCheck, Play, RotateCcw
-} from 'lucide-react';
-import { Element, Era, Achievement } from '../types/game';
+import { X, ArrowRight } from 'lucide-react';
+import { Element, Era } from '../types/game';
 import { ELEMENTS } from '../data/elements';
 import { RECIPES } from '../data/recipes';
 import { ACHIEVEMENTS } from '../data/achievements';
@@ -14,10 +11,48 @@ import MenuModal from './MenuModal';
 import WinModal from './WinModal';
 import AchievementToast from './AchievementToast';
 import PixelIcon from './PixelIcon';
+import AwardCard from './AwardCard';
 
 interface GameBoardProps {
   gameState: ReturnType<typeof import('../hooks/useGameState').useGameState>;
 }
+
+interface DiscoveryHint {
+  target: string;
+  prerequisites: string[];
+  quote: string;
+}
+
+const DISCOVERY_HINTS: DiscoveryHint[] = [
+  { target: 'life', prerequisites: [], quote: 'A living spark begins when the world has both a body that can hold shape and a force that can wake it.' },
+  { target: 'human', prerequisites: ['life'], quote: 'The next leap is not larger life. It is life shaped into intent, hands, and choice.' },
+  { target: 'tool', prerequisites: ['human'], quote: 'The first real upgrade is an object that lets clever hands change harder things.' },
+  { target: 'village', prerequisites: ['house'], quote: 'A community appears when one settled home becomes a pattern.' },
+  { target: 'knowledge', prerequisites: ['language'], quote: 'Ideas become powerful only after people can preserve and pass them forward.' },
+  { target: 'school', prerequisites: ['knowledge', 'village'], quote: 'Learning becomes a system when stored ideas get a shared place.' },
+  { target: 'science', prerequisites: ['school'], quote: 'Real science begins when teaching turns curiosity into repeatable proof.' },
+  { target: 'ore', prerequisites: ['stone'], quote: 'Look for value hidden inside ordinary rock, not on its surface.' },
+  { target: 'metal', prerequisites: ['ore'], quote: 'A useful material is waiting inside the raw mineral, but it needs a harsher transformation.' },
+  { target: 'machine', prerequisites: ['metal', 'tool'], quote: 'Work becomes repeatable when a crafted helper meets a stronger material.' },
+  { target: 'factory', prerequisites: ['machine', 'energy'], quote: 'Scale begins when one machine gains steady power and a place to multiply work.' },
+  { target: 'technology', prerequisites: ['factory', 'science'], quote: 'Advanced invention needs organized learning and production that can keep up.' },
+  { target: 'coal', prerequisites: ['pressure'], quote: 'Old growth can become stored fire after the planet presses it long enough.' },
+  { target: 'fuel', prerequisites: ['coal'], quote: 'The launch path needs energy that is not just bright, but concentrated and ready to burn.' },
+  { target: 'rocket', prerequisites: ['fuel', 'technology'], quote: 'A vessel that escapes the ground needs advanced systems and serious stored energy.' },
+  { target: 'computer', prerequisites: ['electricity', 'technology'], quote: 'Information becomes hardware when electricity learns to follow instructions.' },
+  { target: 'mission-control', prerequisites: ['computer', 'science'], quote: 'A skybound mission needs a grounded brain before it trusts the vehicle.' },
+  { target: 'launch', prerequisites: ['mission-control', 'rocket'], quote: 'A finished vessel becomes a launch only when guidance and ignition agree.' },
+  { target: 'orbit', prerequisites: ['launch', 'space'], quote: 'Escaping upward is only half the job; the path must become stable.' },
+  { target: 'astronaut', prerequisites: ['human', 'rocket'], quote: 'The mission becomes human when a traveler can survive inside the machine.' },
+  { target: 'space-mission', prerequisites: ['astronaut', 'orbit'], quote: 'A real operation begins when crew, path, and control move as one.' },
+  { target: 'lens', prerequisites: ['glass'], quote: 'Clear material becomes a better eye after craft gives it focus.' },
+  { target: 'telescope', prerequisites: ['lens'], quote: 'A focused eye becomes powerful when it is built to look far past the horizon.' },
+  { target: 'astronomy', prerequisites: ['telescope', 'science'], quote: 'Seeing distant objects is not enough; the sky needs a discipline.' },
+  { target: 'planet', prerequisites: ['astronomy'], quote: 'The far object becomes understandable only after the sky is studied with intent.' },
+  { target: 'red-dust', prerequisites: ['dust', 'metal'], quote: 'The red signature comes from dry particles touched by stronger material.' },
+  { target: 'mars', prerequisites: ['planet', 'red-dust'], quote: 'The destination reveals itself when a world and its rusty signature finally match.' },
+  { target: 'mars-landing', prerequisites: ['mars', 'space-mission'], quote: 'The final step is not finding the destination; it is sending a complete mission there.' },
+];
 
 export default function GameBoard({ gameState }: GameBoardProps) {
   const {
@@ -66,6 +101,8 @@ export default function GameBoard({ gameState }: GameBoardProps) {
 
   // Bottom drawer control: 'hints' | 'recipes' | 'bag' | 'awards' | null
   const [activeDrawer, setActiveDrawer] = useState<'hints' | 'recipes' | 'bag' | 'awards' | null>(null);
+  const [hintIndex, setHintIndex] = useState(0);
+  const hintCarouselRef = useRef<HTMLDivElement | null>(null);
 
   // Format playing time helper
   const formatTime = (totalSeconds: number) => {
@@ -95,71 +132,47 @@ export default function GameBoard({ gameState }: GameBoardProps) {
 
   const hasMoreThan12 = false;
 
-  // Dynamic progression hint
-  const dynamicHint = useMemo(() => {
-    const ids = discoveredElements;
-    if (!ids.includes('life')) {
-      return {
-        text: 'Wet earth combined with dynamic power creates the miraculous spark of life.',
-        ingredients: 'Mud + Energy',
-        target: 'Life'
-      };
-    }
-    if (!ids.includes('human')) {
-      return {
-        text: 'Life itself mixed with wet earth shapes a clever, dreaming creature.',
-        ingredients: 'Life + Mud',
-        target: 'Human'
-      };
-    }
-    if (!ids.includes('tool')) {
-      return {
-        text: 'The dreaming creature shapes cold stone to craft an extension of its hands.',
-        ingredients: 'Human + Stone',
-        target: 'Tool'
-      };
-    }
-    if (!ids.includes('house')) {
-      return {
-        text: 'The clever creature constructs shelter, then elevates it to a permanent home.',
-        ingredients: 'Human + Shelter',
-        target: 'House'
-      };
-    }
-    if (!ids.includes('science')) {
-      return {
-        text: 'Systematic learning within a shared sanctuary births the pursuit of science.',
-        ingredients: 'Knowledge + School',
-        target: 'Science'
-      };
-    }
-    if (!ids.includes('rocket')) {
-      return {
-        text: 'Concentrated fuel ignited with advanced technology launches a vessel upwards.',
-        ingredients: 'Fuel + Technology',
-        target: 'Rocket'
-      };
-    }
-    if (!ids.includes('mars')) {
-      return {
-        text: 'Observe a far celestial body, then color it with rusty metal dust.',
-        ingredients: 'Planet + Red Dust',
-        target: 'Mars'
-      };
-    }
-    if (!ids.includes('mars-landing')) {
-      return {
-        text: 'Send our greatest space mission straight to the dusty red planet to land!',
-        ingredients: 'Mars + Space Mission',
-        target: 'Mars Landing'
-      };
-    }
-    return {
-      text: 'Congratulations! You have landed on Mars. Continue combining to discover all 85+ items!',
-      ingredients: 'Explore & discover',
-      target: 'Completionist'
-    };
+  const activeHints = useMemo(() => {
+    const ids = new Set(discoveredElements);
+
+    return DISCOVERY_HINTS
+      .filter((hint) => !ids.has(hint.target))
+      .map((hint, index) => ({
+        ...hint,
+        index,
+        missingPrerequisites: hint.prerequisites.filter((prerequisite) => !ids.has(prerequisite)).length,
+      }))
+      .sort((a, b) => a.missingPrerequisites - b.missingPrerequisites || a.index - b.index)
+      .slice(0, 3);
   }, [discoveredElements]);
+
+  const activeHintTargets = activeHints.map((hint) => hint.target).join('|');
+
+  useEffect(() => {
+    setHintIndex(0);
+    hintCarouselRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
+  }, [activeHintTargets]);
+
+  useEffect(() => {
+    const carousel = hintCarouselRef.current;
+    const card = carousel?.children[hintIndex] as HTMLElement | undefined;
+
+    if (!carousel || !card) return;
+
+    carousel.scrollTo({
+      left: card.offsetLeft - carousel.offsetLeft,
+      behavior: 'smooth',
+    });
+  }, [hintIndex, activeHintTargets]);
+
+  const moveHintCarousel = (direction: -1 | 1) => {
+    setHintIndex((current) => {
+      if (activeHints.length === 0) return 0;
+
+      const nextIndex = Math.min(Math.max(current + direction, 0), activeHints.length - 1);
+      return nextIndex;
+    });
+  };
 
   // Handle selection of elements
   const handleCardClick = (id: string) => {
@@ -268,6 +281,17 @@ export default function GameBoard({ gameState }: GameBoardProps) {
     }
   };
 
+  const getDrawerMeta = (drawer: 'hints' | 'recipes' | 'bag' | 'awards') => {
+    switch (drawer) {
+      case 'hints': return { iconId: 'hints', title: 'Research Lab / Hints' };
+      case 'recipes': return { iconId: 'recipes', title: 'Your Discovered Recipes' };
+      case 'bag': return { iconId: 'bag', title: 'Total Discovered Elements' };
+      case 'awards': return { iconId: 'awards', title: 'Space Accomplishments' };
+    }
+  };
+
+  const drawerMeta = activeDrawer ? getDrawerMeta(activeDrawer) : null;
+
   const handleRestart = () => {
     startNewGame();
     setSlot1(null);
@@ -286,17 +310,20 @@ export default function GameBoard({ gameState }: GameBoardProps) {
         <header className="shrink-0 z-30 flex items-center justify-between bg-brand-bg px-4 py-2.5 border-b-2 border-brand-ink/10 select-none">
           <div className="flex flex-col">
             <h1 className="text-2xl font-serif font-black tracking-tight text-brand-ink flex items-center gap-1">
-              ✦ Mars Landing ✦
+              <PixelIcon id="mars" size={22} />
+              <span>Mars Landing</span>
             </h1>
             
             {/* Minimal HUD info directly under title */}
             <div className="flex items-center gap-2 mt-0.5 text-xs font-black text-brand-muted uppercase tracking-wider">
               <span className="flex items-center gap-1 text-brand-primary">
-                ✦ {formatTime(elapsedTime)}
+                <PixelIcon id="achievement-speedrunner" size={11} />
+                {formatTime(elapsedTime)}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1 text-brand-secondary">
-                🧪 {discoveredElements.length}/{ELEMENTS.length}
+                <PixelIcon id="science" size={11} />
+                {discoveredElements.length}/{ELEMENTS.length}
               </span>
             </div>
           </div>
@@ -361,7 +388,7 @@ export default function GameBoard({ gameState }: GameBoardProps) {
                 }
               `}
             >
-              <span className="text-[9px]">🌌</span>
+              <PixelIcon id="space" size={10} />
               <span>All</span>
             </button>
 
@@ -390,7 +417,7 @@ export default function GameBoard({ gameState }: GameBoardProps) {
           <div className="w-full">
             {previewElements.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 bg-brand-card/40 rounded-2xl border-2 border-dashed border-brand-border text-center">
-                <span className="text-xl mb-1 opacity-50">📁</span>
+                <PixelIcon id="bag" size={28} className="mb-1 opacity-40" />
                 <p className="text-xs font-bold text-brand-muted uppercase tracking-wider">No elements discovered here yet</p>
               </div>
             ) : (
@@ -513,10 +540,12 @@ export default function GameBoard({ gameState }: GameBoardProps) {
               {/* Drawer Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-brand-ink/10 bg-brand-paper">
                 <h3 className="text-sm font-black uppercase tracking-widest text-brand-ink font-serif flex items-center gap-2">
-                  {activeDrawer === 'hints' && '✦ RESEARCH LAB / HINTS ✦'}
-                  {activeDrawer === 'recipes' && '✦ YOUR DISCOVERED RECIPES ✦'}
-                  {activeDrawer === 'bag' && '✦ TOTAL DISCOVERED ELEMENTS ✦'}
-                  {activeDrawer === 'awards' && '✦ SPACE ACCOMPLISHMENTS ✦'}
+                  {drawerMeta && (
+                    <>
+                      <PixelIcon id={drawerMeta.iconId} size={16} />
+                      {drawerMeta.title}
+                    </>
+                  )}
                 </h3>
                 <button
                   id="btn-close-drawer"
@@ -533,19 +562,65 @@ export default function GameBoard({ gameState }: GameBoardProps) {
                 {/* 1. HINTS DRAWER CONTENT */}
                 {activeDrawer === 'hints' && (
                   <div className="space-y-4">
-                    <div className="bg-brand-secondary/15 border-2 border-brand-secondary/40 rounded-2xl p-4">
-                      <p className="text-[10px] font-extrabold uppercase tracking-widest text-brand-secondary">ACTIVE OBJECTIVE</p>
-                      <h4 className="text-sm font-black text-brand-ink mt-0.5 uppercase tracking-wide">Target: {dynamicHint.target}</h4>
-                      <p className="text-xs font-semibold text-brand-ink/90 mt-1 leading-relaxed">
-                        "{dynamicHint.text}"
-                      </p>
-                      <div className="mt-3.5 inline-flex items-center gap-1 text-[9px] font-black text-brand-secondary uppercase tracking-widest bg-white/80 px-2.5 py-1 rounded-md border border-brand-secondary/30">
-                        ⭐ Combination Recipe: {dynamicHint.ingredients}
+                    {activeHints.length > 0 ? (
+                      <div className="flex items-stretch gap-2">
+                        <button
+                          type="button"
+                          onClick={() => moveHintCarousel(-1)}
+                          disabled={hintIndex === 0}
+                          aria-label="Previous hint"
+                          className={`w-9 min-h-[112px] shrink-0 flex items-center justify-center rounded-xl border-2 border-brand-ink bg-brand-paper text-brand-ink shadow-sm transition-all ${
+                            hintIndex === 0
+                              ? 'opacity-35 cursor-not-allowed'
+                              : 'hover:-translate-y-0.5 hover:bg-brand-secondary/15 active:translate-y-0 cursor-pointer'
+                          }`}
+                        >
+                          <PixelIcon id="arrow-right" size={18} className="rotate-180" />
+                        </button>
+
+                        <div
+                          ref={hintCarouselRef}
+                          className="flex-1 flex gap-3 overflow-x-auto no-scrollbar px-1 pb-1 snap-x snap-mandatory scroll-smooth"
+                        >
+                          {activeHints.map((hint) => (
+                            <div
+                              key={hint.target}
+                              className="min-w-full sm:min-w-[86%] snap-start bg-brand-secondary/15 border-2 border-brand-secondary/40 rounded-2xl p-4 flex items-center"
+                            >
+                              <p className="text-sm font-serif font-black text-brand-ink leading-relaxed">
+                                "{hint.quote}"
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => moveHintCarousel(1)}
+                          disabled={hintIndex >= activeHints.length - 1}
+                          aria-label="Next hint"
+                          className={`w-9 min-h-[112px] shrink-0 flex items-center justify-center rounded-xl border-2 border-brand-ink bg-brand-paper text-brand-ink shadow-sm transition-all ${
+                            hintIndex >= activeHints.length - 1
+                              ? 'opacity-35 cursor-not-allowed'
+                              : 'hover:-translate-y-0.5 hover:bg-brand-secondary/15 active:translate-y-0 cursor-pointer'
+                          }`}
+                        >
+                          <PixelIcon id="arrow-right" size={18} />
+                        </button>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="bg-brand-secondary/15 border-2 border-brand-secondary/40 rounded-2xl p-4">
+                        <p className="text-sm font-serif font-black text-brand-ink leading-relaxed">
+                          "Priority queue clear. Keep experimenting to map the quiet branches."
+                        </p>
+                      </div>
+                    )}
 
                     <div className="bg-brand-paper border border-brand-border rounded-xl p-3.5 text-xs text-brand-ink/80 leading-relaxed font-semibold space-y-2">
-                      <p className="font-extrabold uppercase tracking-wider text-brand-ink">💡 General Lab Guidance</p>
+                      <p className="font-extrabold uppercase tracking-wider text-brand-ink flex items-center gap-1.5">
+                        <PixelIcon id="hints" size={14} />
+                        General Lab Guidance
+                      </p>
                       <p>• Discovered elements can be combined repeatedly to spark higher tiers of materials.</p>
                       <p>• Tap cards in the inventory grid to mount them onto Slot 1 and Slot 2 in the workshop.</p>
                       <p>• Tap an active card in the mixing slots to safely return it to your pouch.</p>
@@ -579,7 +654,7 @@ export default function GameBoard({ gameState }: GameBoardProps) {
                               </div>
                             </div>
                             
-                            <span className="text-xs font-black text-brand-muted">➔</span>
+                            <PixelIcon id="arrow-right" size={16} className="opacity-60" />
 
                             <div className="flex items-center gap-2 bg-brand-secondary/10 px-3 py-1.5 border border-brand-secondary/30 rounded-xl">
                               <PixelIcon id={res?.id || ''} size={18} />
@@ -635,36 +710,11 @@ export default function GameBoard({ gameState }: GameBoardProps) {
                       {ACHIEVEMENTS.map((ach) => {
                         const isUnlocked = unlockedAchievements.includes(ach.id);
                         return (
-                          <div
+                          <AwardCard
                             key={ach.id}
-                            className={`flex items-start gap-3 p-3 rounded-xl border transition-all
-                              ${isUnlocked
-                                ? 'bg-brand-secondary/15 border-brand-secondary text-brand-ink'
-                                : 'bg-brand-bg/40 border-brand-border opacity-60 text-brand-ink/80'
-                              }
-                            `}
-                          >
-                            <div className="text-2xl p-1 bg-brand-card border border-brand-border rounded-lg shrink-0 w-11 h-11 flex items-center justify-center">
-                              {ach.icon}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-black uppercase tracking-wider text-brand-ink">{ach.name}</span>
-                                {isUnlocked ? (
-                                  <span className="text-[8px] font-black uppercase text-brand-secondary bg-white border border-brand-secondary/40 px-1.5 py-0.5 rounded-md">
-                                    EARNED
-                                  </span>
-                                ) : (
-                                  <span className="text-[8px] font-black uppercase text-brand-muted bg-brand-card border border-brand-border px-1.5 py-0.5 rounded-md">
-                                    LOCKED
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[11px] text-brand-muted mt-0.5 leading-relaxed font-semibold">
-                                {ach.description}
-                              </p>
-                            </div>
-                          </div>
+                            achievement={ach}
+                            isUnlocked={isUnlocked}
+                          />
                         );
                       })}
                     </div>
@@ -695,7 +745,9 @@ export default function GameBoard({ gameState }: GameBoardProps) {
               exit={{ scale: 0.9, opacity: 0 }}
               className="relative flex flex-col items-center max-w-xs w-full bg-brand-card border-2 border-brand-ink p-6 rounded-3xl shadow-xl text-center select-none"
             >
-              <div className="absolute top-3 right-3 text-brand-primary animate-pulse text-sm">✨</div>
+              <div className="absolute top-3 right-3 text-brand-primary animate-pulse">
+                <PixelIcon id="energy" size={14} />
+              </div>
               <span className="text-[10px] uppercase font-black tracking-widest text-brand-primary">New Discovery!</span>
               
               <div className="my-5 p-3.5 bg-brand-paper border border-brand-border rounded-2xl">
@@ -738,7 +790,6 @@ export default function GameBoard({ gameState }: GameBoardProps) {
         isOpen={isMenuOpen}
         onClose={resumeGame}
         onRestart={handleRestart}
-        unlockedAchievements={unlockedAchievements}
         isMutedMusic={isMutedMusic}
         isMutedSfx={isMutedSfx}
         volume={volume}

@@ -746,6 +746,39 @@ export default function PixelIcon({ id, size = 48, className = "" }: PixelIconPr
             <circle cx="12" cy="12" r="9" fill="none" stroke={colors.outline} strokeWidth="2" />
           </>
         );
+      case 'achievement-speedrunner':
+        return (
+          <>
+            {/* Speedrunner Achievement: Mission stopwatch */}
+            <path d="M9 3h6v3H9V3z" fill={colors.greyLight} stroke={colors.outline} strokeWidth="1.5" />
+            <path d="M7 6L5 4M17 6l2-2" stroke={colors.outline} strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="12" cy="13" r="7" fill={colors.creamPaper} stroke={colors.outline} strokeWidth="2" />
+            <path d="M12 13l3-4" stroke={colors.redMars} strokeWidth="2" strokeLinecap="round" />
+            <path d="M12 8v1M17 13h-1M12 18v-1M7 13h1" stroke={colors.greyMedium} strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="12" cy="13" r="1.5" fill={colors.yellowGold} stroke={colors.outline} strokeWidth="1" />
+          </>
+        );
+      case 'achievement-completionist':
+        return (
+          <>
+            {/* Completionist Achievement: Finished mission log */}
+            <rect x="5" y="4" width="14" height="16" rx="2" fill={colors.creamPaper} stroke={colors.outline} strokeWidth="2" />
+            <path d="M8 8l1.5 1.5L12 7M8 12l1.5 1.5L12 11" stroke={colors.greenDark} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M13 8h3M13 12h3" stroke={colors.greyMedium} strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="16" cy="17" r="4" fill={colors.yellowGold} stroke={colors.outline} strokeWidth="1.5" />
+            <path d="M16 14l1 2 2 .5-1.5 1.5.5 2-2-1-2 1 .5-2L13 16.5l2-.5z" fill={colors.yellowLight} stroke={colors.outline} strokeWidth="0.8" strokeLinejoin="round" />
+          </>
+        );
+      case 'achievement-locked':
+        return (
+          <>
+            {/* Locked Achievement: Secured badge */}
+            <rect x="5" y="10" width="14" height="10" rx="2" fill={colors.greyLight} stroke={colors.outline} strokeWidth="2" />
+            <path d="M8 10V7a4 4 0 018 0v3" fill="none" stroke={colors.outline} strokeWidth="2" strokeLinecap="round" />
+            <rect x="11" y="14" width="2" height="3" fill={colors.greyDark} />
+            <circle cx="12" cy="14" r="1.5" fill={colors.greyDark} />
+          </>
+        );
       
       // Bottom navigation / HUD Icons
       case 'hints':
@@ -791,6 +824,14 @@ export default function PixelIcon({ id, size = 48, className = "" }: PixelIconPr
       case 'close':
         return (
           <path d="M18 6L6 18M6 6l12 12" stroke={colors.outline} strokeWidth="2.5" strokeLinecap="round" />
+        );
+      case 'add':
+        return (
+          <path d="M12 5v14M5 12h14" stroke={colors.outline} strokeWidth="3" strokeLinecap="round" />
+        );
+      case 'arrow-right':
+        return (
+          <path d="M4 12h14M13 6l6 6-6 6" stroke={colors.outline} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         );
       default:
         // Render a cute generic mystery sparkling star element

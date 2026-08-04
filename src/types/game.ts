@@ -3,7 +3,6 @@ export type Era = 'Nature' | 'Life' | 'Human' | 'Civilization' | 'Industry' | 'S
 export interface Element {
   id: string;
   name: string;
-  icon: string;
   era: Era;
   description?: string;
 }
@@ -19,7 +18,7 @@ export interface Achievement {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  iconId: string;
 }
 
 export interface GameState {

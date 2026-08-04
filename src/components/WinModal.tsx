@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Clock, Sparkles, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
+import PixelIcon from './PixelIcon';
 
 interface WinModalProps {
   isOpen: boolean;
@@ -34,10 +35,10 @@ export default function WinModal({
           >
             {/* Little sparkles */}
             <div className="absolute top-4 left-4 text-brand-primary opacity-60 animate-pulse">
-              <Sparkles size={16} />
+              <PixelIcon id="energy" size={16} />
             </div>
             <div className="absolute bottom-4 right-4 text-brand-secondary opacity-60 animate-pulse">
-              <Sparkles size={16} />
+              <PixelIcon id="energy" size={16} />
             </div>
 
             {/* Huge planetary celebrate icon */}
@@ -45,9 +46,9 @@ export default function WinModal({
               initial={{ rotate: -10, scale: 0.8 }}
               animate={{ rotate: 0, scale: [0.8, 1.1, 1] }}
               transition={{ delay: 0.2, duration: 0.8 }}
-              className="text-7xl mb-4"
+              className="mb-4 p-4 bg-brand-paper border-2 border-brand-ink rounded-2xl shadow-[2px_2.5px_0px_0px_rgba(36,33,30,1)]"
             >
-              🚀🔴
+              <PixelIcon id="rocket" size={86} />
             </motion.div>
 
             <h1 className="text-3xl font-black tracking-tight text-brand-ink mb-2">
@@ -61,7 +62,7 @@ export default function WinModal({
             <div className="grid grid-cols-3 gap-3 w-full mb-8">
               {/* Stat: Time */}
               <div className="flex flex-col items-center justify-center p-3 bg-brand-bg/50 border-2 border-brand-border rounded-2xl">
-                <Clock className="text-brand-primary mb-1" size={18} />
+                <PixelIcon id="achievement-speedrunner" size={20} className="mb-1" />
                 <span className="text-[10px] uppercase font-bold tracking-wider text-brand-ink/50">Time</span>
                 <span className="text-base font-bold font-mono text-brand-ink">
                   {formatTime(finalTime)}
@@ -70,7 +71,7 @@ export default function WinModal({
 
               {/* Stat: Elements */}
               <div className="flex flex-col items-center justify-center p-3 bg-brand-bg/50 border-2 border-brand-border rounded-2xl">
-                <Sparkles className="text-brand-secondary mb-1" size={18} />
+                <PixelIcon id="bag" size={20} className="mb-1" />
                 <span className="text-[10px] uppercase font-bold tracking-wider text-brand-ink/50">Elements</span>
                 <span className="text-base font-bold text-brand-ink">
                   {totalElements}
@@ -79,7 +80,7 @@ export default function WinModal({
 
               {/* Stat: Achievements */}
               <div className="flex flex-col items-center justify-center p-3 bg-brand-bg/50 border-2 border-brand-border rounded-2xl">
-                <Trophy className="text-amber-500 mb-1" size={18} />
+                <PixelIcon id="awards" size={20} className="mb-1" />
                 <span className="text-[10px] uppercase font-bold tracking-wider text-brand-ink/50">Trophies</span>
                 <span className="text-base font-bold text-brand-ink">
                   {totalAchievements}
