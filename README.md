@@ -117,6 +117,8 @@ npm start        # Serve the production build and realtime rooms
 
 Multiplayer deployment requires a long-running Node host that supports WebSockets. After `npm run build`, run `npm start`; a static-only host cannot operate the room relay by itself.
 
+If the site and realtime server use different origins, set `VITE_REALTIME_URL` to the public `wss://` endpoint during the frontend build. Static Netlify hosting does not run `server.ts`; deploy the Node service separately or move the complete app to a WebSocket-capable Node host.
+
 ## Project Structure
 
 ```text

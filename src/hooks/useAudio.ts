@@ -9,10 +9,6 @@ function getAudioContext() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
-  // Resume context if suspended (browser security autoplays)
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
   return audioCtx;
 }
 
@@ -89,9 +85,12 @@ export function useAudio(
   const startBgm = useCallback(() => {
     if (isMutedMusicRef.current) return;
     if (bgmInterval) return; // Already running
+    // Browsers only allow audio after a user gesture. The unlock handler below
+    // creates/resumes the context and starts music once that gesture occurs.
+    if (!audioCtx || audioCtx.state !== 'running') return;
 
     try {
-      const ctx = getAudioContext();
+      const ctx = audioCtx;
 
       const chords = [
         [130.81, 164.81, 196.00, 246.94], // Cmaj7 (C3, E3, G3, B3)
@@ -213,32 +212,31 @@ export function useAudio(
     isMutedSfxRef.current = isMutedSfx;
   }, [isMutedSfx]);
 
-  // Cleanup on unmount & Mobile Audio Context Unlocking
+  // Cleanup on unmount & browser audio-context unlocking
   useEffect(() => {
-    const handleUnlock = () => {
+    const handleUnlock = async () => {
       try {
         const ctx = getAudioContext();
-        if (ctx && ctx.state === 'suspended') {
-          ctx.resume().then(() => {
-            console.log('AudioContext successfully unlocked on mobile!');
-            // If music is enabled, start playing
-            if (!isMutedMusicRef.current && !bgmInterval) {
-              startBgm();
-            }
-          });
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+        if (ctx.state === 'running') {
+          window.removeEventListener('pointerdown', handleUnlock);
+          window.removeEventListener('keydown', handleUnlock);
+          if (!isMutedMusicRef.current && !bgmInterval) startBgm();
         }
       } catch (e) {
         console.warn('Unable to resume AudioContext from gesture:', e);
       }
     };
 
-    window.addEventListener('click', handleUnlock);
-    window.addEventListener('touchstart', handleUnlock, { passive: true });
+    window.addEventListener('pointerdown', handleUnlock);
+    window.addEventListener('keydown', handleUnlock);
 
     return () => {
       stopBgm();
-      window.removeEventListener('click', handleUnlock);
-      window.removeEventListener('touchstart', handleUnlock);
+      window.removeEventListener('pointerdown', handleUnlock);
+      window.removeEventListener('keydown', handleUnlock);
     };
   }, [startBgm, stopBgm]);
 

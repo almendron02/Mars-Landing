@@ -7,6 +7,21 @@ interface MultiplayerOptions {
   onSnapshot: (snapshot: SharedGameSnapshot) => void;
 }
 
+const getRealtimeUrl = () => {
+  const configuredUrl = import.meta.env.VITE_REALTIME_URL?.trim();
+  if (configuredUrl) return configuredUrl;
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/realtime`;
+};
+
+const verifySameOriginRealtimeServer = async () => {
+  if (import.meta.env.DEV || import.meta.env.VITE_REALTIME_URL) return;
+  const response = await fetch('/health', { headers: { Accept: 'application/json' } });
+  if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) {
+    throw new Error('Production multiplayer server is not configured.');
+  }
+};
+
 export function useMultiplayer({ onSnapshot }: MultiplayerOptions) {
   const socketRef = useRef<WebSocket | null>(null);
   const snapshotHandler = useRef(onSnapshot);
@@ -28,7 +43,7 @@ export function useMultiplayer({ onSnapshot }: MultiplayerOptions) {
     }
   }, []);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     if (socketRef.current?.readyState === WebSocket.OPEN) return Promise.resolve(socketRef.current);
     if (socketRef.current?.readyState === WebSocket.CONNECTING) {
       return new Promise<WebSocket>((resolve, reject) => {
@@ -40,8 +55,15 @@ export function useMultiplayer({ onSnapshot }: MultiplayerOptions) {
 
     setConnection('connecting');
     setError('');
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(`${protocol}//${window.location.host}/realtime`);
+    try {
+      await verifySameOriginRealtimeServer();
+    } catch {
+      setConnection('offline');
+      setError('Multiplayer is not available on this deployment yet. The realtime server must be connected.');
+      return Promise.reject(new Error('Realtime server unavailable'));
+    }
+
+    const socket = new WebSocket(getRealtimeUrl());
     socketRef.current = socket;
 
     socket.addEventListener('message', (event) => {
