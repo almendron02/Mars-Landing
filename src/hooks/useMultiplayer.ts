@@ -32,6 +32,7 @@ export function useMultiplayer({ onSnapshot }: MultiplayerOptions) {
   const [roomStarted, setRoomStarted] = useState(false);
   const [error, setError] = useState('');
   const [lastDiscovery, setLastDiscovery] = useState<SharedDiscovery | null>(null);
+  const [roomClosed, setRoomClosed] = useState('');
 
   useEffect(() => {
     snapshotHandler.current = onSnapshot;
@@ -67,9 +68,16 @@ export function useMultiplayer({ onSnapshot }: MultiplayerOptions) {
     socketRef.current = socket;
 
     socket.addEventListener('message', (event) => {
+      if (socketRef.current !== socket) return;
       const message = JSON.parse(event.data);
       if (message.type === 'identity') setPlayerId(message.playerId);
       if (message.type === 'error') setError(message.message);
+      if (message.type === 'room-closed') {
+        setRoomClosed(message.message);
+        setRoomStarted(false);
+        setRoomCode('');
+        setPlayers([]);
+      }
       if (message.type === 'room-state' || message.type === 'room-started') {
         setRoomCode(message.roomCode);
         setPlayers(message.players);
@@ -80,10 +88,12 @@ export function useMultiplayer({ onSnapshot }: MultiplayerOptions) {
       if (message.type === 'discovery') setLastDiscovery(message.discovery);
     });
     socket.addEventListener('close', () => {
+      if (socketRef.current !== socket) return;
       setConnection('offline');
       socketRef.current = null;
     });
     socket.addEventListener('error', () => {
+      if (socketRef.current !== socket) return;
       setError('The expedition server is unavailable. Try again in a moment.');
     });
 
@@ -123,6 +133,7 @@ export function useMultiplayer({ onSnapshot }: MultiplayerOptions) {
     setRoomStarted(false);
     setLastDiscovery(null);
     setError('');
+    setRoomClosed('');
     setConnection('offline');
   }, []);
 
@@ -140,6 +151,7 @@ export function useMultiplayer({ onSnapshot }: MultiplayerOptions) {
     roomStarted,
     error,
     lastDiscovery,
+    roomClosed,
     createRoom,
     joinRoom,
     leaveRoom,

@@ -139,6 +139,10 @@ realtime.on('connection', (socket) => {
         send(socket, { type: 'error', message: 'That expedition already has four explorers.' });
         return;
       }
+      if (!room.snapshot.isActive || ![...room.players.values()].some((roomPlayer) => roomPlayer.isHost)) {
+        send(socket, { type: 'error', message: 'The creator is not currently playing that world.' });
+        return;
+      }
       const player: RoomPlayer = {
         id: clientId,
         name: safeName(message.playerName),
@@ -187,15 +191,15 @@ realtime.on('connection', (socket) => {
   socket.on('close', () => {
     const room = rooms.get(roomCode);
     if (!room) return;
+    const departingPlayer = room.players.get(clientId);
     room.players.delete(clientId);
-    if (room.players.size === 0) {
+    if (departingPlayer?.isHost) {
+      broadcast(room, { type: 'room-closed', message: 'The world creator stopped playing.' });
+      room.players.forEach((player) => player.socket.close());
       rooms.delete(room.code);
       return;
     }
-    if (![...room.players.values()].some((player) => player.isHost)) {
-      const nextHost = room.players.values().next().value as RoomPlayer;
-      nextHost.isHost = true;
-    }
+    if (room.players.size === 0) rooms.delete(room.code);
     broadcast(room, roomState(room));
   });
 });

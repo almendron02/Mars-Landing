@@ -1,14 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { GameState, Element, Achievement, SharedGameSnapshot } from '../types/game';
 import { ELEMENTS, STARTING_ELEMENTS } from '../data/elements';
 import { getRecipeResult } from '../data/recipes';
 import { ACHIEVEMENTS } from '../data/achievements';
-import { useLocalStorage } from './useLocalStorage';
 import { useTimer } from './useTimer';
 
-const LOCAL_STORAGE_KEY = 'cozy_alchemy_save_v1';
-
-const DEFAULT_STATE: GameState = {
+export const DEFAULT_GAME_STATE: GameState = {
   discoveredElements: STARTING_ELEMENTS,
   achievements: [],
   elapsedTime: 0,
@@ -19,17 +16,23 @@ const DEFAULT_STATE: GameState = {
   isActive: false, // Wait until game starts
 };
 
-export function useGameState(audio: ReturnType<typeof import('./useAudio').useAudio>) {
-  const [savedState, setSavedState] = useLocalStorage<GameState>(LOCAL_STORAGE_KEY, DEFAULT_STATE);
-  
+const hasSameIds = (current: string[], incoming: string[]) =>
+  current.length === incoming.length && current.every((id, index) => id === incoming[index]);
+
+export function useGameState(
+  audio: ReturnType<typeof import('./useAudio').useAudio>,
+  initialAudio: Pick<GameState, 'isMutedMusic' | 'isMutedSfx' | 'volume'> = DEFAULT_GAME_STATE,
+) {
   // Game states in active memory
-  const [discoveredElements, setDiscoveredElements] = useState<string[]>(savedState.discoveredElements);
-  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>(savedState.achievements);
-  const [hasWon, setHasWon] = useState<boolean>(savedState.hasWon);
-  const [isMutedMusic, setIsMutedMusic] = useState<boolean>(savedState.isMutedMusic);
-  const [isMutedSfx, setIsMutedSfx] = useState<boolean>(savedState.isMutedSfx);
-  const [volume, setVolume] = useState<number>(savedState.volume);
-  const [isActive, setIsActive] = useState<boolean>(savedState.isActive);
+  const [discoveredElements, setDiscoveredElements] = useState<string[]>(DEFAULT_GAME_STATE.discoveredElements);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>(DEFAULT_GAME_STATE.achievements);
+  const [hasWon, setHasWon] = useState<boolean>(DEFAULT_GAME_STATE.hasWon);
+  const [isMutedMusic, setIsMutedMusic] = useState<boolean>(initialAudio.isMutedMusic);
+  const [isMutedSfx, setIsMutedSfx] = useState<boolean>(initialAudio.isMutedSfx);
+  const [volume, setVolume] = useState<number>(initialAudio.volume);
+  const [isActive, setIsActive] = useState<boolean>(DEFAULT_GAME_STATE.isActive);
+  const [hasUnseenRecipes, setHasUnseenRecipes] = useState(false);
+  const [hasUnseenAwards, setHasUnseenAwards] = useState(false);
 
   // Notifications
   const [newDiscoveryToast, setNewDiscoveryToast] = useState<Element | null>(null);
@@ -39,21 +42,7 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
   // Timer
-  const { elapsedTime, setElapsedTime, resetTimer } = useTimer(isActive && !hasWon && !isMenuOpen, savedState.elapsedTime);
-
-  // Sync back to local storage whenever state updates
-  useEffect(() => {
-    setSavedState({
-      discoveredElements,
-      achievements: unlockedAchievements,
-      elapsedTime,
-      isMutedMusic,
-      isMutedSfx,
-      volume,
-      hasWon,
-      isActive,
-    });
-  }, [discoveredElements, unlockedAchievements, elapsedTime, isMutedMusic, isMutedSfx, volume, hasWon, isActive, setSavedState]);
+  const { elapsedTime, setElapsedTime, resetTimer } = useTimer(isActive && !hasWon && !isMenuOpen, 0);
 
   // Synchronize audio hook whenever settings change
   useEffect(() => {
@@ -126,6 +115,7 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
 
     if (newlyUnlocked.length !== alreadyUnlocked.length) {
       setUnlockedAchievements(newlyUnlocked);
+      setHasUnseenAwards(true);
     }
   }, [audio]);
 
@@ -149,6 +139,7 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
       const updatedDiscoveries = [...discoveredElements, resultId];
       setDiscoveredElements(updatedDiscoveries);
       setNewDiscoveryToast(foundElement);
+      setHasUnseenRecipes(true);
       audio.playNewDiscovery();
 
       // Check win condition
@@ -181,11 +172,6 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
 
   // Matches
   const startNewGame = useCallback(() => {
-    try {
-      window.localStorage.removeItem(LOCAL_STORAGE_KEY);
-    } catch (e) {
-      console.warn('Could not clear localStorage cache', e);
-    }
     setDiscoveredElements(STARTING_ELEMENTS);
     setUnlockedAchievements([]);
     setHasWon(false);
@@ -194,17 +180,9 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
     setIsMenuOpen(false);
     setNewDiscoveryToast(null);
     setNewAchievementToast(null);
-    setSavedState({
-      discoveredElements: STARTING_ELEMENTS,
-      achievements: [],
-      elapsedTime: 0,
-      isMutedMusic,
-      isMutedSfx,
-      volume,
-      hasWon: false,
-      isActive: true,
-    });
-  }, [resetTimer, setSavedState, isMutedMusic, isMutedSfx, volume]);
+    setHasUnseenRecipes(false);
+    setHasUnseenAwards(false);
+  }, [resetTimer]);
 
   const resumeMatch = useCallback(() => {
     setIsActive(true);
@@ -215,22 +193,34 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
     setIsMenuOpen(false);
   }, []);
 
+  const loadGame = useCallback((snapshot: GameState) => {
+    setDiscoveredElements(snapshot.discoveredElements);
+    setUnlockedAchievements(snapshot.achievements);
+    resetTimer(snapshot.elapsedTime);
+    setHasWon(snapshot.hasWon);
+    setIsActive(snapshot.isActive);
+    setIsMenuOpen(false);
+    setNewDiscoveryToast(null);
+    setNewAchievementToast(null);
+    setHasUnseenRecipes(false);
+    setHasUnseenAwards(false);
+  }, [resetTimer]);
+
   const applySharedSnapshot = useCallback((snapshot: SharedGameSnapshot) => {
     setDiscoveredElements((current) => {
-      const merged = [...new Set([...current, ...snapshot.discoveredElements])];
-      return merged.length === current.length && merged.every((id, index) => id === current[index]) ? current : merged;
+      if (hasSameIds(current, snapshot.discoveredElements)) return current;
+      if (snapshot.discoveredElements.some((id) => !current.includes(id))) setHasUnseenRecipes(true);
+      return snapshot.discoveredElements;
     });
     setUnlockedAchievements((current) => {
-      const merged = [...new Set([...current, ...snapshot.achievements])];
-      return merged.length === current.length && merged.every((id, index) => id === current[index]) ? current : merged;
+      if (hasSameIds(current, snapshot.achievements)) return current;
+      if (snapshot.achievements.some((id) => !current.includes(id))) setHasUnseenAwards(true);
+      return snapshot.achievements;
     });
-    setElapsedTime((current) => Math.max(current, snapshot.elapsedTime));
-    setHasWon((current) => current || snapshot.hasWon);
+    setElapsedTime(snapshot.elapsedTime);
+    setHasWon(snapshot.hasWon);
     setIsActive(snapshot.isActive);
   }, [setElapsedTime]);
-
-  // Check if saved match exists and has progress (i.e. more elements or time)
-  const hasSavedMatch = savedState.discoveredElements.length > STARTING_ELEMENTS.length || savedState.elapsedTime > 0;
 
   return {
     discoveredElements,
@@ -242,7 +232,8 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
     hasWon,
     isActive,
     isMenuOpen,
-    hasSavedMatch,
+    hasUnseenRecipes,
+    hasUnseenAwards,
     newDiscoveryToast,
     setNewDiscoveryToast,
     newAchievementToast,
@@ -256,6 +247,10 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
     startNewGame,
     resumeMatch,
     exitToMenu,
+    loadGame,
     applySharedSnapshot,
+    markRecipesSeen: () => setHasUnseenRecipes(false),
+    markAwardsSeen: () => setHasUnseenAwards(false),
+    playSharedDiscovery: audio.playNewDiscovery,
   };
 }

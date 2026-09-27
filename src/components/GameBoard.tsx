@@ -19,6 +19,7 @@ interface GameBoardProps {
   gameState: ReturnType<typeof import('../hooks/useGameState').useGameState>;
   multiplayer?: MultiplayerSession;
   onLeaveShared?: () => void;
+  isWorldOwner?: boolean;
 }
 
 interface DiscoveryHint {
@@ -58,7 +59,7 @@ const DISCOVERY_HINTS: DiscoveryHint[] = [
   { target: 'mars-landing', prerequisites: ['mars', 'space-mission'], quote: 'The final step is not finding the destination; it is sending a complete mission there.' },
 ];
 
-export default function GameBoard({ gameState, multiplayer, onLeaveShared }: GameBoardProps) {
+export default function GameBoard({ gameState, multiplayer, onLeaveShared, isWorldOwner = false }: GameBoardProps) {
   const {
     discoveredElements,
     unlockedAchievements,
@@ -79,6 +80,11 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared }: Gam
     pauseGame,
     resumeGame,
     startNewGame,
+    hasUnseenRecipes,
+    hasUnseenAwards,
+    markRecipesSeen,
+    markAwardsSeen,
+    playSharedDiscovery,
   } = gameState;
 
   // Selected slots
@@ -172,9 +178,10 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared }: Gam
 
   useEffect(() => {
     if (!multiplayer?.lastDiscovery || multiplayer.lastDiscovery.playerId === multiplayer.playerId) return;
+    playSharedDiscovery();
     const timer = window.setTimeout(multiplayer.clearDiscovery, 6500);
     return () => window.clearTimeout(timer);
-  }, [multiplayer?.lastDiscovery, multiplayer?.playerId]);
+  }, [multiplayer?.lastDiscovery, multiplayer?.playerId, playSharedDiscovery]);
 
   const moveHintCarousel = (direction: -1 | 1) => {
     setHintIndex((current) => {
@@ -502,14 +509,18 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared }: Gam
           {/* Button 2: Recipes */}
           <button
             id="nav-btn-recipes"
-            onClick={() => setActiveDrawer('recipes')}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border-2 cursor-pointer transition-all active:translate-y-0.5 active:shadow-none
+            onClick={() => {
+              setActiveDrawer('recipes');
+              markRecipesSeen();
+            }}
+            className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-xl border-2 cursor-pointer transition-all active:translate-y-0.5 active:shadow-none
               ${activeDrawer === 'recipes'
                 ? 'bg-brand-paper border-brand-ink text-brand-ink shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)]'
                 : 'bg-brand-card hover:bg-brand-paper border-brand-border text-brand-muted'
               }
             `}
           >
+            {hasUnseenRecipes && <span aria-label="New recipes" className="absolute top-1.5 right-2 w-2.5 h-2.5 rounded-full bg-brand-primary border border-white shadow-sm" />}
             <PixelIcon id="recipes" size={18} className="mb-1" />
             <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider">Recipes</span>
           </button>
@@ -532,14 +543,18 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared }: Gam
           {/* Button 4: Awards */}
           <button
             id="nav-btn-awards"
-            onClick={() => setActiveDrawer('awards')}
-            className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border-2 cursor-pointer transition-all active:translate-y-0.5 active:shadow-none
+            onClick={() => {
+              setActiveDrawer('awards');
+              markAwardsSeen();
+            }}
+            className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-xl border-2 cursor-pointer transition-all active:translate-y-0.5 active:shadow-none
               ${activeDrawer === 'awards'
                 ? 'bg-brand-paper border-brand-ink text-brand-ink shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)]'
                 : 'bg-brand-card hover:bg-brand-paper border-brand-border text-brand-muted'
               }
             `}
           >
+            {hasUnseenAwards && <span aria-label="New awards" className="absolute top-1.5 right-2 w-2.5 h-2.5 rounded-full bg-brand-primary border border-white shadow-sm" />}
             <PixelIcon id="awards" size={18} className="mb-1" />
             <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider">Awards</span>
           </button>
@@ -568,9 +583,9 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared }: Gam
               setIsMapOpen(true);
               multiplayer.clearDiscovery();
             }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-[65] w-[min(360px,calc(100vw-2rem))] bg-brand-ink text-white border-2 border-brand-primary rounded-2xl shadow-xl p-3 flex items-center gap-3 text-left cursor-pointer"
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[65] w-[min(360px,calc(100vw-2rem))] bg-brand-card text-brand-ink border-2 border-brand-ink rounded-2xl shadow-[3px_4px_0px_0px_rgba(36,33,30,1)] p-3 flex items-center gap-3 text-left cursor-pointer"
           >
-            <span className="w-10 h-10 rounded-xl bg-white/10 grid place-items-center"><PixelIcon id={multiplayer.lastDiscovery.elementId} size={27} /></span>
+            <span className="w-10 h-10 rounded-xl bg-brand-paper border border-brand-border grid place-items-center"><PixelIcon id={multiplayer.lastDiscovery.elementId} size={27} /></span>
             <span className="flex-1"><strong className="block text-[10px] uppercase tracking-wider text-brand-primary">New shared discovery</strong><span className="text-xs font-bold">{multiplayer.lastDiscovery.playerName} discovered {ELEMENTS.find((element) => element.id === multiplayer.lastDiscovery!.elementId)?.name}</span></span>
             <span className="text-[9px] font-black uppercase tracking-wider">View map</span>
           </motion.button>
@@ -855,6 +870,8 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared }: Gam
         changeVolume={changeVolume}
         canRestart={!multiplayer}
         onLeave={multiplayer ? onLeaveShared : undefined}
+        roomCode={isWorldOwner ? multiplayer?.roomCode : undefined}
+        playerCount={isWorldOwner ? multiplayer?.players.length : undefined}
       />
 
       {/* WIN MODAL */}

@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowLeft, Check, Clipboard, LoaderCircle, LogIn, Play, Settings, Sparkles, Users } from 'lucide-react';
+import { ArrowLeft, Check, Clipboard, LoaderCircle, LogIn, Settings, Sparkles, Trash2, Users } from 'lucide-react';
 import type { MultiplayerSession } from '../hooks/useMultiplayer';
+import type { HostedWorld } from '../types/game';
 import MenuModal from './MenuModal';
 import PixelIcon from './PixelIcon';
 
 type Panel = 'home' | 'host' | 'join' | 'lobby';
 
 interface ExpeditionSetupProps {
-  hasSavedMatch: boolean;
+  hostedWorlds: HostedWorld[];
   multiplayer: MultiplayerSession;
-  onCreateRoom: (name: string) => void;
+  onCreateWorld: (name: string) => boolean;
+  onSelectWorld: (worldId: string, name: string) => void;
+  onDeleteWorld: (worldId: string) => void;
+  onJoinWorld: (name: string, code: string) => void;
   isMutedMusic: boolean;
   isMutedSfx: boolean;
   volume: number;
@@ -20,9 +24,12 @@ interface ExpeditionSetupProps {
 }
 
 export default function ExpeditionSetup({
-  hasSavedMatch,
+  hostedWorlds,
   multiplayer,
-  onCreateRoom,
+  onCreateWorld,
+  onSelectWorld,
+  onDeleteWorld,
+  onJoinWorld,
   isMutedMusic,
   isMutedSfx,
   volume,
@@ -42,14 +49,18 @@ export default function ExpeditionSetup({
     return playerName;
   };
 
-  const createRoom = () => {
+  const createWorld = () => {
+    if (onCreateWorld(rememberName())) setPanel('lobby');
+  };
+
+  const selectWorld = (worldId: string) => {
     setPanel('lobby');
-    onCreateRoom(rememberName());
+    onSelectWorld(worldId, rememberName());
   };
 
   const joinRoom = () => {
     setPanel('lobby');
-    multiplayer.joinRoom(rememberName(), code);
+    onJoinWorld(rememberName(), code);
   };
 
   const goBack = () => {
@@ -79,6 +90,11 @@ export default function ExpeditionSetup({
         <AnimatePresence mode="wait">
           {panel === 'home' && (
             <motion.div key="home" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} className="flex-1 flex flex-col">
+              {multiplayer.roomClosed && (
+                <p className="mb-4 rounded-xl border-2 border-brand-primary/40 bg-brand-primary/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-brand-primary">
+                  {multiplayer.roomClosed}
+                </p>
+              )}
               <div className="flex flex-col gap-3.5 w-full">
                 <button onClick={() => setPanel('host')} className="w-full flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary-hover border-2 border-brand-ink text-white font-extrabold uppercase tracking-widest py-3.5 rounded-2xl shadow-[2px_2.5px_0px_0px_rgba(36,33,30,1)] hover:translate-y-[1px] hover:shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)] active:scale-[0.98] cursor-pointer transition-all">
                   <Users size={16} /> Host Game
@@ -99,7 +115,7 @@ export default function ExpeditionSetup({
                 </button>
               </div>
               <p className="text-[10px] text-brand-muted/70 mt-auto pt-8 leading-normal font-bold uppercase tracking-wider">
-                {hasSavedMatch ? 'Hosting continues your saved civilization. Start alone or invite up to three explorers.' : 'Host a game to play alone or invite up to three explorers.'}
+                {hostedWorlds.length > 0 ? `${hostedWorlds.length} of 3 hosted worlds saved on this device.` : 'Create a hosted world to play alone or invite up to three explorers.'}
               </p>
             </motion.div>
           )}
@@ -108,28 +124,64 @@ export default function ExpeditionSetup({
             <motion.div key={panel} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="text-left flex-1">
               <button onClick={goBack} className="setup-back"><ArrowLeft size={15} /> Back</button>
               <h2 className="text-2xl font-serif font-black uppercase tracking-tight mt-6">{panel === 'host' ? 'Host Game' : 'Join Game'}</h2>
-              <p className="text-xs font-semibold text-brand-muted leading-relaxed mt-2 mb-6">
+              <p className="text-xs font-semibold text-brand-muted leading-relaxed mt-2 mb-5">
                 {panel === 'host'
-                  ? 'Open your civilization, then start immediately or share the code with friends.'
+                  ? 'Select one of your worlds or create a new civilization in the next empty slot.'
                   : 'Enter the host code to join the same civilization.'}
               </p>
 
               <label className="setup-label" htmlFor="player-name">Explorer name</label>
               <input id="player-name" value={name} onChange={(event) => setName(event.target.value)} maxLength={18} placeholder="Your name" className="setup-input" autoComplete="nickname" />
 
-              {panel === 'join' && (
+              {panel === 'host' ? (
+                <div className="mt-5 space-y-4">
+                  {hostedWorlds.length > 0 && (
+                    <div>
+                      <span className="setup-label">Select world</span>
+                      <div className="space-y-2">
+                        {hostedWorlds.map((world) => (
+                          <div key={world.id} className="flex items-stretch gap-2">
+                            <button onClick={() => selectWorld(world.id)} className="flex-1 text-left bg-brand-paper hover:bg-brand-bg border-2 border-brand-border hover:border-brand-ink rounded-xl p-3 cursor-pointer transition-all">
+                              <span className="block text-xs font-black uppercase tracking-wider text-brand-ink">World {world.slot}</span>
+                              <span className="block mt-1 text-[10px] font-bold text-brand-muted">{world.snapshot.discoveredElements.length} elements · {Math.floor(world.snapshot.elapsedTime / 60)} min played</span>
+                            </button>
+                            <button
+                              aria-label={`Delete World ${world.slot}`}
+                              onClick={() => {
+                                if (confirm(`Delete World ${world.slot}? This progress cannot be recovered.`)) onDeleteWorld(world.id);
+                              }}
+                              className="w-11 grid place-items-center rounded-xl border-2 border-brand-border bg-brand-card text-brand-primary hover:border-brand-primary cursor-pointer transition-all"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border-t border-brand-border pt-4">
+                    <span className="setup-label">Create new world</span>
+                    {hostedWorlds.length < 3 ? (
+                      <button onClick={createWorld} className="setup-primary"><Users size={17} /> Create New World</button>
+                    ) : (
+                      <div className="rounded-xl border-2 border-brand-primary/40 bg-brand-primary/10 p-3 text-center">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-brand-primary">No more space to create worlds</p>
+                        <p className="mt-1 text-[10px] font-semibold text-brand-muted">Delete one of the saved worlds to open a slot.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
                 <>
                   <label className="setup-label mt-4" htmlFor="room-code">Mars code</label>
                   <div className="setup-code-field">
                     <span aria-hidden="true">MARS-</span>
                     <input id="room-code" value={code.replace(/^MARS-/i, '')} onChange={(event) => setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4))} maxLength={4} placeholder="7K2Q" aria-label="Four-character Mars game code" autoCapitalize="characters" autoComplete="off" />
                   </div>
+                  <button disabled={code.length < 4} onClick={joinRoom} className="setup-primary mt-6 disabled:opacity-40 disabled:cursor-not-allowed"><LogIn size={17} /> Join Game</button>
                 </>
               )}
-
-              <button disabled={panel === 'join' && code.length < 4} onClick={panel === 'host' ? createRoom : joinRoom} className="setup-primary mt-6 disabled:opacity-40 disabled:cursor-not-allowed">
-                {panel === 'host' ? <><Users size={17} /> Create Game</> : <><LogIn size={17} /> Join Game</>}
-              </button>
             </motion.div>
           )}
 
@@ -162,11 +214,7 @@ export default function ExpeditionSetup({
                     ))}
                   </div>
 
-                  {multiplayer.isHost ? (
-                    <button onClick={multiplayer.startRoom} className="setup-primary"><Play size={17} fill="currentColor" /> Start Game</button>
-                  ) : (
-                    <div className="text-center py-3 text-[10px] font-black uppercase tracking-[0.16em] text-brand-muted animate-pulse">Waiting for the host to begin</div>
-                  )}
+                  <div className="text-center py-3 text-[10px] font-black uppercase tracking-[0.16em] text-brand-muted animate-pulse">{multiplayer.isHost ? 'Opening your world' : 'Waiting for the host to begin'}</div>
                 </>
               )}
             </motion.div>

@@ -32,6 +32,14 @@ export interface GameState {
   isActive: boolean; // false when paused
 }
 
+export interface HostedWorld {
+  id: string;
+  slot: 1 | 2 | 3;
+  createdAt: number;
+  updatedAt: number;
+  snapshot: GameState;
+}
+
 export interface SharedGameSnapshot {
   discoveredElements: string[];
   achievements: string[];

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, RotateCcw, Settings, X } from 'lucide-react';
+import { Check, Clipboard, Play, RotateCcw, Settings, X } from 'lucide-react';
 import AudioControls from './AudioControls';
 import PixelIcon from './PixelIcon';
 
@@ -18,6 +18,8 @@ interface MenuModalProps {
   onLeave?: () => void;
   initialTab?: 'settings' | 'tutorial' | 'developer';
   context?: 'game' | 'start';
+  roomCode?: string;
+  playerCount?: number;
 }
 
 export default function MenuModal({
@@ -34,8 +36,11 @@ export default function MenuModal({
   onLeave,
   initialTab = 'settings',
   context = 'game',
+  roomCode,
+  playerCount,
 }: MenuModalProps) {
   const [activeTab, setActiveTab] = useState<'settings' | 'tutorial' | 'developer'>(initialTab);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (isOpen) setActiveTab(initialTab);
@@ -166,6 +171,24 @@ export default function MenuModal({
             <div className="flex-1 overflow-y-auto p-6 bg-brand-card">
               {activeTab === 'settings' ? (
                 <div className="flex flex-col gap-6">
+                  {context === 'game' && roomCode && (
+                    <div className="rounded-2xl border-2 border-brand-ink bg-brand-paper p-4 text-center shadow-[2px_2px_0px_0px_rgba(36,33,30,1)]">
+                      <span className="text-[9px] font-black uppercase tracking-[0.18em] text-brand-muted">Live world code</span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(roomCode);
+                          setCopied(true);
+                          window.setTimeout(() => setCopied(false), 1600);
+                        }}
+                        className="mt-2 mx-auto flex items-center gap-2 text-2xl font-mono font-black text-brand-ink hover:text-brand-primary cursor-pointer"
+                        title="Copy live world code"
+                      >
+                        {roomCode} {copied ? <Check size={17} /> : <Clipboard size={17} />}
+                      </button>
+                      <p className="mt-2 text-[10px] font-bold text-brand-muted">{playerCount ?? 1} explorer{playerCount === 1 ? '' : 's'} connected · Share while you are playing</p>
+                    </div>
+                  )}
                   {context === 'game' && (
                   <div className="flex flex-col gap-3.5">
                     <button

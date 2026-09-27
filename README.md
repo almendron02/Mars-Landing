@@ -38,16 +38,17 @@ The interface also provides contextual hints and a record of discovered recipes 
 * **Purposeful progression** from basic natural elements to interplanetary exploration
 * **Dozens of discoverable elements** organized across six historical eras
 * **Achievement system** with milestone, completionist, and speedrun challenges
-* **Persistent browser saves** for discoveries, achievements, settings, and elapsed time
-* **Resume and restart flows** for managing an existing match
+* **Three persistent hosted-world slots** for discoveries, achievements, settings, and elapsed time
+* **Create, resume, and delete flows** for managing hosted worlds
 * **Game timer** that automatically pauses while the menu is open
 * **Search and era filters** for navigating the growing element collection
 * **Hints, recipes, inventory, and awards** available through compact in-game drawers
 * **Procedurally generated music and sound effects** with independent controls
 * **Responsive, mobile-first interface** designed for touch and desktop input
 * **Animated feedback** for combinations, discoveries, achievements, and victory
-* **Host and join expeditions** for up to four players using a short `MARS-XXXX` code
+* **Host and join expeditions** for up to four players using a fresh short `MARS-XXXX` code each session
 * **One fully shared world** where discoveries, inventory, achievements, time, and victory state update for every player
+* **Host-owned saves** that remain local to the creator; joined worlds are temporary guest sessions
 * **Circular civilization map** with a light interface, zoom controls, and connections that appear as discoveries are made
 
 ## Technical Highlights
@@ -58,7 +59,7 @@ Elements, recipes, and achievements are defined separately from the interface, m
 
 ### Persistent game state
 
-A custom local-storage workflow automatically saves the active match, discovered elements, achievements, timer, audio preferences, and win state directly in the browser.
+A custom local-storage workflow automatically saves up to three host-owned worlds, including discovered elements, achievements, timer, audio preferences, and win state. Guest sessions never create a local world save.
 
 ### Browser-native procedural audio
 
@@ -101,15 +102,16 @@ npm install
 npm run dev
 ```
 
-`npm run dev` starts both the Vite site and the realtime expedition server. Open the local URL shown by Vite in your browser. Other devices on the same network can use the network URL and join with the host's generated code.
+`npm run dev` starts both the Vite site and the realtime expedition server. Open the local URL shown by Vite in your browser. Other devices on the same network can use the network URL and join with the host's generated code while the creator is playing.
 
-No API key, database, or external service is required to play the game locally. Active rooms live in server memory for the duration of the expedition; the original solo save remains browser-local.
+No API key, database, or external service is required to play the game locally. Active rooms live in server memory only while the creator is connected. Reopening a saved world creates a new code; old codes are never reused.
 
 ### Available Commands
 
 ```bash
 npm run dev      # Start the development server
 npm run build    # Create a production build
+npm test         # Run hosted-world persistence tests
 npm run preview  # Preview the production build
 npm run lint     # Run TypeScript validation
 npm start        # Serve the production build and realtime rooms
