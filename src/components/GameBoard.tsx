@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ArrowRight } from 'lucide-react';
+import { X, ArrowRight, Users } from 'lucide-react';
 import { Element, Era } from '../types/game';
 import { ELEMENTS } from '../data/elements';
 import { RECIPES } from '../data/recipes';
@@ -12,9 +12,13 @@ import WinModal from './WinModal';
 import AchievementToast from './AchievementToast';
 import PixelIcon from './PixelIcon';
 import AwardCard from './AwardCard';
+import CivilizationMap from './CivilizationMap';
+import type { MultiplayerSession } from '../hooks/useMultiplayer';
 
 interface GameBoardProps {
   gameState: ReturnType<typeof import('../hooks/useGameState').useGameState>;
+  multiplayer?: MultiplayerSession;
+  onLeaveShared?: () => void;
 }
 
 interface DiscoveryHint {
@@ -54,7 +58,7 @@ const DISCOVERY_HINTS: DiscoveryHint[] = [
   { target: 'mars-landing', prerequisites: ['mars', 'space-mission'], quote: 'The final step is not finding the destination; it is sending a complete mission there.' },
 ];
 
-export default function GameBoard({ gameState }: GameBoardProps) {
+export default function GameBoard({ gameState, multiplayer, onLeaveShared }: GameBoardProps) {
   const {
     discoveredElements,
     unlockedAchievements,
@@ -101,6 +105,7 @@ export default function GameBoard({ gameState }: GameBoardProps) {
 
   // Bottom drawer control: 'hints' | 'recipes' | 'bag' | 'awards' | null
   const [activeDrawer, setActiveDrawer] = useState<'hints' | 'recipes' | 'bag' | 'awards' | null>(null);
+  const [isMapOpen, setIsMapOpen] = useState(false);
   const [hintIndex, setHintIndex] = useState(0);
   const hintCarouselRef = useRef<HTMLDivElement | null>(null);
 
@@ -164,6 +169,12 @@ export default function GameBoard({ gameState }: GameBoardProps) {
       behavior: 'smooth',
     });
   }, [hintIndex, activeHintTargets]);
+
+  useEffect(() => {
+    if (!multiplayer?.lastDiscovery || multiplayer.lastDiscovery.playerId === multiplayer.playerId) return;
+    const timer = window.setTimeout(multiplayer.clearDiscovery, 6500);
+    return () => window.clearTimeout(timer);
+  }, [multiplayer?.lastDiscovery, multiplayer?.playerId]);
 
   const moveHintCarousel = (direction: -1 | 1) => {
     setHintIndex((current) => {
@@ -325,6 +336,14 @@ export default function GameBoard({ gameState }: GameBoardProps) {
                 <PixelIcon id="science" size={11} />
                 {discoveredElements.length}/{ELEMENTS.length}
               </span>
+              {multiplayer && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1 text-brand-tertiary" title={`Shared world ${multiplayer.roomCode}`}>
+                    <Users size={11} /> {multiplayer.players.length}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
@@ -455,7 +474,15 @@ export default function GameBoard({ gameState }: GameBoardProps) {
 
     {/* FIXED BOTTOM NAVIGATION BAR */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 bg-brand-bg/95 backdrop-blur-md border-t-2 border-brand-ink/10 px-4 py-3 select-none flex justify-center">
-        <div className="w-full max-w-[480px] grid grid-cols-4 gap-2">
+        <div className="w-full max-w-[480px] grid grid-cols-5 gap-1.5">
+          <button
+            id="nav-btn-map"
+            onClick={() => setIsMapOpen(true)}
+            className="flex flex-col items-center justify-center py-2 px-1 rounded-xl border-2 cursor-pointer transition-all active:translate-y-0.5 active:shadow-none bg-brand-card hover:bg-brand-paper border-brand-border text-brand-muted"
+          >
+            <PixelIcon id="map" size={18} className="mb-1" />
+            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider">Map</span>
+          </button>
           
           {/* Button 1: Hints */}
           <button
@@ -469,7 +496,7 @@ export default function GameBoard({ gameState }: GameBoardProps) {
             `}
           >
             <PixelIcon id="hints" size={18} className="mb-1" />
-            <span className="text-[9px] font-black uppercase tracking-wider">Hints</span>
+            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider">Hints</span>
           </button>
 
           {/* Button 2: Recipes */}
@@ -484,7 +511,7 @@ export default function GameBoard({ gameState }: GameBoardProps) {
             `}
           >
             <PixelIcon id="recipes" size={18} className="mb-1" />
-            <span className="text-[9px] font-black uppercase tracking-wider">Recipes</span>
+            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider">Recipes</span>
           </button>
 
           {/* Button 3: Bag */}
@@ -499,7 +526,7 @@ export default function GameBoard({ gameState }: GameBoardProps) {
             `}
           >
             <PixelIcon id="bag" size={18} className="mb-1" />
-            <span className="text-[9px] font-black uppercase tracking-wider">Bag</span>
+            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider">Bag</span>
           </button>
 
           {/* Button 4: Awards */}
@@ -514,11 +541,41 @@ export default function GameBoard({ gameState }: GameBoardProps) {
             `}
           >
             <PixelIcon id="awards" size={18} className="mb-1" />
-            <span className="text-[9px] font-black uppercase tracking-wider">Awards</span>
+            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider">Awards</span>
           </button>
 
         </div>
       </footer>
+
+      <AnimatePresence>
+        {isMapOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <CivilizationMap
+              discoveredElements={discoveredElements}
+              onClose={() => setIsMapOpen(false)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {multiplayer?.lastDiscovery && multiplayer.lastDiscovery.playerId !== multiplayer.playerId && (
+          <motion.button
+            initial={{ opacity: 0, y: -18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -18 }}
+            onClick={() => {
+              setIsMapOpen(true);
+              multiplayer.clearDiscovery();
+            }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[65] w-[min(360px,calc(100vw-2rem))] bg-brand-ink text-white border-2 border-brand-primary rounded-2xl shadow-xl p-3 flex items-center gap-3 text-left cursor-pointer"
+          >
+            <span className="w-10 h-10 rounded-xl bg-white/10 grid place-items-center"><PixelIcon id={multiplayer.lastDiscovery.elementId} size={27} /></span>
+            <span className="flex-1"><strong className="block text-[10px] uppercase tracking-wider text-brand-primary">New shared discovery</strong><span className="text-xs font-bold">{multiplayer.lastDiscovery.playerName} discovered {ELEMENTS.find((element) => element.id === multiplayer.lastDiscovery!.elementId)?.name}</span></span>
+            <span className="text-[9px] font-black uppercase tracking-wider">View map</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* POPOUT DRAWERS OVERLAY SYSTEM */}
       <AnimatePresence>
@@ -796,6 +853,8 @@ export default function GameBoard({ gameState }: GameBoardProps) {
         toggleMusic={toggleMusic}
         toggleSfx={toggleSfx}
         changeVolume={changeVolume}
+        canRestart={!multiplayer}
+        onLeave={multiplayer ? onLeaveShared : undefined}
       />
 
       {/* WIN MODAL */}

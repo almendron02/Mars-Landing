@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, Element, Achievement } from '../types/game';
+import { GameState, Element, Achievement, SharedGameSnapshot } from '../types/game';
 import { ELEMENTS, STARTING_ELEMENTS } from '../data/elements';
 import { getRecipeResult } from '../data/recipes';
 import { ACHIEVEMENTS } from '../data/achievements';
@@ -210,6 +210,25 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
     setIsActive(true);
   }, []);
 
+  const exitToMenu = useCallback(() => {
+    setIsActive(false);
+    setIsMenuOpen(false);
+  }, []);
+
+  const applySharedSnapshot = useCallback((snapshot: SharedGameSnapshot) => {
+    setDiscoveredElements((current) => {
+      const merged = [...new Set([...current, ...snapshot.discoveredElements])];
+      return merged.length === current.length && merged.every((id, index) => id === current[index]) ? current : merged;
+    });
+    setUnlockedAchievements((current) => {
+      const merged = [...new Set([...current, ...snapshot.achievements])];
+      return merged.length === current.length && merged.every((id, index) => id === current[index]) ? current : merged;
+    });
+    setElapsedTime((current) => Math.max(current, snapshot.elapsedTime));
+    setHasWon((current) => current || snapshot.hasWon);
+    setIsActive(snapshot.isActive);
+  }, [setElapsedTime]);
+
   // Check if saved match exists and has progress (i.e. more elements or time)
   const hasSavedMatch = savedState.discoveredElements.length > STARTING_ELEMENTS.length || savedState.elapsedTime > 0;
 
@@ -236,5 +255,7 @@ export function useGameState(audio: ReturnType<typeof import('./useAudio').useAu
     resumeGame,
     startNewGame,
     resumeMatch,
+    exitToMenu,
+    applySharedSnapshot,
   };
 }

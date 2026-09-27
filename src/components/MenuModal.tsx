@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Play, RotateCcw, Settings, X } from 'lucide-react';
 import AudioControls from './AudioControls';
@@ -14,6 +14,10 @@ interface MenuModalProps {
   toggleMusic: () => void;
   toggleSfx: () => void;
   changeVolume: (v: number) => void;
+  canRestart?: boolean;
+  onLeave?: () => void;
+  initialTab?: 'settings' | 'tutorial' | 'developer';
+  context?: 'game' | 'start';
 }
 
 export default function MenuModal({
@@ -25,9 +29,17 @@ export default function MenuModal({
   volume,
   toggleMusic,
   toggleSfx,
-  changeVolume
+  changeVolume,
+  canRestart = true,
+  onLeave,
+  initialTab = 'settings',
+  context = 'game',
 }: MenuModalProps) {
-  const [activeTab, setActiveTab] = useState<'settings' | 'tutorial' | 'developer'>('settings');
+  const [activeTab, setActiveTab] = useState<'settings' | 'tutorial' | 'developer'>(initialTab);
+
+  useEffect(() => {
+    if (isOpen) setActiveTab(initialTab);
+  }, [initialTab, isOpen]);
   const tutorialSteps = [
     {
       number: '01',
@@ -120,7 +132,7 @@ export default function MenuModal({
                 `}
               >
                 <Settings size={14} />
-                Pause
+                {context === 'start' ? 'Sound' : 'Pause'}
               </button>
               <button
                 id="tab-tutorial"
@@ -154,7 +166,7 @@ export default function MenuModal({
             <div className="flex-1 overflow-y-auto p-6 bg-brand-card">
               {activeTab === 'settings' ? (
                 <div className="flex flex-col gap-6">
-                  {/* Primary Game Controls */}
+                  {context === 'game' && (
                   <div className="flex flex-col gap-3.5">
                     <button
                       id="btn-resume-game"
@@ -174,20 +186,31 @@ export default function MenuModal({
                       Tutorial
                     </button>
 
-                    <button
-                      id="btn-restart-match"
-                      onClick={() => {
-                        if (confirm('Are you sure you want to start a brand new match? Your current progress will be completely deleted.')) {
-                          onRestart();
-                          onClose();
-                        }
-                      }}
-                      className="w-full flex items-center justify-center gap-2 bg-brand-card hover:bg-brand-paper border-2 border-brand-ink text-brand-ink font-extrabold uppercase tracking-widest py-3 rounded-xl shadow-[2px_2.5px_0px_0px_rgba(36,33,30,1)] hover:translate-y-[1px] hover:shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)] active:scale-[0.98] cursor-pointer transition-all"
-                    >
-                      <RotateCcw size={14} strokeWidth={3} />
-                      Start New Match
-                    </button>
+                    {canRestart && (
+                      <button
+                        id="btn-restart-match"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to start a brand new match? Your current progress will be completely deleted.')) {
+                            onRestart();
+                            onClose();
+                          }
+                        }}
+                        className="w-full flex items-center justify-center gap-2 bg-brand-card hover:bg-brand-paper border-2 border-brand-ink text-brand-ink font-extrabold uppercase tracking-widest py-3 rounded-xl shadow-[2px_2.5px_0px_0px_rgba(36,33,30,1)] hover:translate-y-[1px] hover:shadow-[1px_1.5px_0px_0px_rgba(36,33,30,1)] active:scale-[0.98] cursor-pointer transition-all"
+                      >
+                        <RotateCcw size={14} strokeWidth={3} />
+                        Start New Match
+                      </button>
+                    )}
+                    {onLeave && (
+                      <button
+                        onClick={onLeave}
+                        className="w-full flex items-center justify-center gap-2 bg-brand-card hover:bg-brand-paper border-2 border-brand-ink text-brand-ink font-extrabold uppercase tracking-widest py-3 rounded-xl cursor-pointer transition-all"
+                      >
+                        Leave Shared Expedition
+                      </button>
+                    )}
                   </div>
+                  )}
 
                   {/* Audio Controls */}
                   <div className="flex flex-col gap-2">

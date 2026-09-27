@@ -46,6 +46,9 @@ The interface also provides contextual hints and a record of discovered recipes 
 * **Procedurally generated music and sound effects** with independent controls
 * **Responsive, mobile-first interface** designed for touch and desktop input
 * **Animated feedback** for combinations, discoveries, achievements, and victory
+* **Host and join expeditions** for up to four players using a short `MARS-XXXX` code
+* **One fully shared world** where discoveries, inventory, achievements, time, and victory state update for every player
+* **Circular civilization map** with a light interface, zoom controls, and connections that appear as discoveries are made
 
 ## Technical Highlights
 
@@ -80,6 +83,7 @@ The project explores how an open-ended alchemy mechanic can become a concise, fi
 | Icons         | Lucide React          |
 | Audio         | Web Audio API         |
 | Persistence   | Browser Local Storage |
+| Multiplayer   | WebSocket relay (`ws`) |
 
 ## Run Locally
 
@@ -97,9 +101,9 @@ npm install
 npm run dev
 ```
 
-Open the local URL shown by Vite in your browser.
+`npm run dev` starts both the Vite site and the realtime expedition server. Open the local URL shown by Vite in your browser. Other devices on the same network can use the network URL and join with the host's generated code.
 
-No API key, database, or external service is required to play the game locally.
+No API key, database, or external service is required to play the game locally. Active rooms live in server memory for the duration of the expedition; the original solo save remains browser-local.
 
 ### Available Commands
 
@@ -108,7 +112,10 @@ npm run dev      # Start the development server
 npm run build    # Create a production build
 npm run preview  # Preview the production build
 npm run lint     # Run TypeScript validation
+npm start        # Serve the production build and realtime rooms
 ```
+
+Multiplayer deployment requires a long-running Node host that supports WebSockets. After `npm run build`, run `npm start`; a static-only host cannot operate the room relay by itself.
 
 ## Project Structure
 

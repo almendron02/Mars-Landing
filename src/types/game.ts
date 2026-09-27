@@ -31,3 +31,25 @@ export interface GameState {
   hasWon: boolean;
   isActive: boolean; // false when paused
 }
+
+export interface SharedGameSnapshot {
+  discoveredElements: string[];
+  achievements: string[];
+  elapsedTime: number;
+  hasWon: boolean;
+  isActive: boolean;
+}
+
+export interface MultiplayerPlayer {
+  id: string;
+  name: string;
+  color: string;
+  isHost: boolean;
+}
+
+export interface SharedDiscovery {
+  elementId: string;
+  playerId: string;
+  playerName: string;
+  createdAt: number;
+}
