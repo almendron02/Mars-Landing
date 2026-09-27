@@ -321,8 +321,8 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared, isWor
   };
 
   return (
-    <div id="game-board" className="h-screen w-screen overflow-hidden bg-brand-bg text-brand-ink flex flex-col items-center">
-      <div className="w-full max-w-[480px] h-full flex flex-col overflow-hidden">
+    <div id="game-board" className="fixed inset-0 h-dvh w-full overflow-hidden overscroll-none bg-brand-bg text-brand-ink flex flex-col items-center">
+      <div className="w-full max-w-[480px] h-full min-h-0 flex flex-col overflow-hidden">
         
         {/* TOP BAR - Always Visible */}
         <header className="shrink-0 z-30 flex items-center justify-between bg-brand-bg px-4 py-2.5 border-b-2 border-brand-ink/10 select-none">
@@ -382,10 +382,10 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared, isWor
           />
         </section>
 
-        {/* SCROLLABLE INVENTORY PREVIEW & GALLERY */}
-        <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-24 pt-2 flex flex-col gap-3">
-          <section id="inventory-preview" className="flex flex-col gap-3 w-full">
-          <div className="flex items-center justify-between border-b border-brand-ink/10 pb-1">
+        {/* STATIC INVENTORY CONTROLS WITH A CARD-ONLY SCROLL REGION */}
+        <div className="flex-1 min-h-0 overflow-hidden px-4 pt-2 flex flex-col">
+          <section id="inventory-preview" className="flex-1 min-h-0 flex flex-col gap-3 w-full">
+          <div className="shrink-0 flex items-center justify-between border-b border-brand-ink/10 pb-1">
             <h2 className="text-sm font-black uppercase tracking-widest text-brand-ink font-serif">
               Your Elements ({discoveredElements.length})
             </h2>
@@ -402,7 +402,7 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared, isWor
           </div>
 
           {/* Era filter pills - Wrapping compact pills, no scroll */}
-          <div className="flex flex-wrap items-center gap-1 select-none w-full justify-start">
+          <div className="shrink-0 flex flex-wrap items-center gap-1 select-none w-full justify-start">
             {/* All pill */}
             <button
               id="filter-era-all"
@@ -439,42 +439,44 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared, isWor
             })}
           </div>
 
-          {/* Collection Grid - exactly 3 columns on mobile, up to 12 items */}
-          <div className="w-full">
-            {previewElements.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 bg-brand-card/40 rounded-2xl border-2 border-dashed border-brand-border text-center">
-                <PixelIcon id="bag" size={28} className="mb-1 opacity-40" />
-                <p className="text-xs font-bold text-brand-muted uppercase tracking-wider">No elements discovered here yet</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
-                {previewElements.map((el) => {
-                  const isSelected = slot1 === el.id || slot2 === el.id;
-                  return (
-                    <ElementCard
-                      key={el.id}
-                      element={el}
-                      isSelected={isSelected}
-                      onClick={() => handleCardClick(el.id)}
-                    />
-                  );
-                })}
-              </div>
+          <div id="element-card-scroll" className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y no-scrollbar pb-24">
+            {/* Collection Grid - exactly 3 columns on mobile */}
+            <div className="w-full">
+              {previewElements.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 bg-brand-card/40 rounded-2xl border-2 border-dashed border-brand-border text-center">
+                  <PixelIcon id="bag" size={28} className="mb-1 opacity-40" />
+                  <p className="text-xs font-bold text-brand-muted uppercase tracking-wider">No elements discovered here yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
+                  {previewElements.map((el) => {
+                    const isSelected = slot1 === el.id || slot2 === el.id;
+                    return (
+                      <ElementCard
+                        key={el.id}
+                        element={el}
+                        isSelected={isSelected}
+                        onClick={() => handleCardClick(el.id)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* View all elements -> link at the bottom */}
+            {hasMoreThan12 && (
+              <button
+                id="btn-view-all"
+                onClick={() => {
+                  setActiveDrawer('bag');
+                }}
+                className="text-center font-black uppercase text-[10px] tracking-widest text-brand-primary hover:underline mt-2 mx-auto flex items-center gap-1 cursor-pointer bg-transparent border-none"
+              >
+                View all elements ({filteredElements.length}) <ArrowRight size={10} />
+              </button>
             )}
           </div>
-
-          {/* View all elements -> link at the bottom */}
-          {hasMoreThan12 && (
-            <button
-              id="btn-view-all"
-              onClick={() => {
-                setActiveDrawer('bag');
-              }}
-              className="text-center font-black uppercase text-[10px] tracking-widest text-brand-primary hover:underline mt-2 self-center flex items-center gap-1 cursor-pointer bg-transparent border-none"
-            >
-              View all elements ({filteredElements.length}) <ArrowRight size={10} />
-            </button>
-          )}
         </section>
       </div>
     </div>
