@@ -569,6 +569,8 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared, isWor
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <CivilizationMap
               discoveredElements={discoveredElements}
+              highlightedElementId={multiplayer?.lastDiscovery?.elementId ?? lastResult?.id}
+              highlightedPlayerName={multiplayer?.lastDiscovery?.playerName}
               onClose={() => setIsMapOpen(false)}
             />
           </motion.div>
@@ -585,7 +587,7 @@ export default function GameBoard({ gameState, multiplayer, onLeaveShared, isWor
               setIsMapOpen(true);
               multiplayer.clearDiscovery();
             }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-[65] w-[min(360px,calc(100vw-2rem))] bg-brand-card text-brand-ink border-2 border-brand-ink rounded-2xl shadow-[3px_4px_0px_0px_rgba(36,33,30,1)] p-3 flex items-center gap-3 text-left cursor-pointer"
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-[80] w-[min(360px,calc(100vw-2rem))] bg-brand-card text-brand-ink border-2 border-brand-ink rounded-2xl shadow-[3px_4px_0px_0px_rgba(36,33,30,1)] p-3 flex items-center gap-3 text-left cursor-pointer"
           >
             <span className="w-10 h-10 rounded-xl bg-brand-paper border border-brand-border grid place-items-center"><PixelIcon id={multiplayer.lastDiscovery.elementId} size={27} /></span>
             <span className="flex-1"><strong className="block text-[10px] uppercase tracking-wider text-brand-primary">New shared discovery</strong><span className="text-xs font-bold">{multiplayer.lastDiscovery.playerName} discovered {ELEMENTS.find((element) => element.id === multiplayer.lastDiscovery!.elementId)?.name}</span></span>

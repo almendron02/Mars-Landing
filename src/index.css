@@ -177,7 +177,9 @@ button, input {
 }
 
 .civilization-map-grid {
-  background-image: radial-gradient(circle at center, rgba(36,33,30,0.075) 1px, transparent 1px);
+  background-image:
+    radial-gradient(circle at center, rgba(201,111,74,0.06), transparent 48%),
+    radial-gradient(circle at center, rgba(36,33,30,0.075) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
@@ -191,6 +193,7 @@ button, input {
 
 .civilization-node {
   --node-color: #8DAE69;
+  --future-opacity: 0.5;
   position: absolute;
   z-index: 5;
   width: 92px;
@@ -203,7 +206,22 @@ button, input {
   gap: 4px;
   border-radius: 50%;
   cursor: default;
-  transition: filter 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
+  transition: filter 180ms ease, opacity 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  padding: 0;
+}
+
+.civilization-node:disabled {
+  opacity: var(--future-opacity);
+}
+
+.civilization-node.is-milestone {
+  width: 116px;
+  height: 116px;
+}
+
+.civilization-node.is-goal {
+  width: 130px;
+  height: 130px;
 }
 
 .civilization-node.is-known {
@@ -211,21 +229,107 @@ button, input {
   border: 2px solid var(--color-brand-ink);
   background: color-mix(in srgb, var(--node-color) 20%, var(--color-brand-card));
   box-shadow: 2px 3px 0 var(--color-brand-ink), 0 0 0 6px color-mix(in srgb, var(--node-color) 9%, transparent);
+  cursor: pointer;
 }
 
 .civilization-node.is-known:hover {
-  box-shadow: 2px 3px 0 var(--color-brand-ink), 0 0 0 8px color-mix(in srgb, var(--node-color) 20%, transparent);
+  transform: translate(-50%, -50%) scale(1.06);
+  box-shadow: 2px 3px 0 var(--color-brand-ink), 0 0 0 10px color-mix(in srgb, var(--node-color) 20%, transparent);
+}
+
+.civilization-node.is-selected {
+  box-shadow: 2px 3px 0 var(--color-brand-ink), 0 0 0 12px color-mix(in srgb, var(--node-color) 28%, transparent);
+}
+
+.civilization-node.is-reachable {
+  color: var(--color-brand-muted);
+  border: 3px dashed color-mix(in srgb, var(--node-color) 62%, var(--color-brand-border));
+  background: color-mix(in srgb, var(--node-color) 9%, var(--color-brand-card));
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--node-color) 7%, transparent);
 }
 
 .civilization-node.is-locked {
   color: color-mix(in srgb, var(--color-brand-muted) 60%, transparent);
   border: 2px dashed color-mix(in srgb, var(--color-brand-border) 78%, transparent);
   background: color-mix(in srgb, var(--color-brand-card) 76%, transparent);
-  filter: blur(0.55px);
+  filter: blur(0.7px);
 }
 
 .civilization-node.is-locked .civilization-node-icon {
   filter: blur(2.5px);
+}
+
+.civilization-node.is-goal.is-locked {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--color-brand-primary) 65%, var(--color-brand-border));
+  background: color-mix(in srgb, var(--color-brand-primary) 10%, var(--color-brand-card));
+  filter: none;
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--color-brand-primary) 7%, transparent);
+}
+
+.civilization-node.is-goal.is-locked .civilization-node-icon {
+  filter: grayscale(0.45) opacity(0.72);
+}
+
+.civilization-node.is-new {
+  z-index: 8;
+  animation: map-node-discovery 1.35s ease-in-out infinite;
+}
+
+.civilization-node-goal {
+  font-size: 7px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-brand-primary);
+}
+
+.map-path.is-new line:last-child {
+  animation: map-path-discovery 1.35s ease-in-out infinite;
+}
+
+.map-node-detail {
+  position: absolute;
+  z-index: 32;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  width: min(340px, calc(100vw - 2rem));
+  max-height: min(560px, calc(100vh - 7rem));
+  overflow-y: auto;
+  padding: 1rem;
+  border: 2px solid var(--color-brand-ink);
+  border-radius: 1.1rem;
+  background: var(--color-brand-card);
+  box-shadow: 3px 4px 0 var(--color-brand-ink);
+  user-select: text;
+}
+
+.map-node-detail-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.6rem;
+  color: var(--color-brand-muted);
+  cursor: pointer;
+}
+
+.map-node-detail-close:hover {
+  background: var(--color-brand-paper);
+  color: var(--color-brand-ink);
+}
+
+@keyframes map-node-discovery {
+  0%, 100% { box-shadow: 2px 3px 0 var(--color-brand-ink), 0 0 0 8px color-mix(in srgb, var(--node-color) 18%, transparent); }
+  50% { box-shadow: 2px 3px 0 var(--color-brand-ink), 0 0 0 22px color-mix(in srgb, var(--node-color) 34%, transparent); }
+}
+
+@keyframes map-path-discovery {
+  0%, 100% { stroke-opacity: 0.68; }
+  50% { stroke-opacity: 1; }
 }
 
 .civilization-node-icon {
@@ -264,8 +368,25 @@ button, input {
 
 @media (max-width: 639px) {
   .civilization-node {
-    width: 100px;
-    height: 100px;
+    width: 96px;
+    height: 96px;
+  }
+
+  .civilization-node.is-milestone {
+    width: 118px;
+    height: 118px;
+  }
+
+  .civilization-node.is-goal {
+    width: 132px;
+    height: 132px;
+  }
+
+  .map-node-detail {
+    left: 1rem;
+    right: 1rem;
+    bottom: 4.8rem;
+    width: auto;
   }
 }
 

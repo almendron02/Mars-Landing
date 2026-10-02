@@ -49,7 +49,7 @@ The interface also provides contextual hints and a record of discovered recipes 
 * **Host and join expeditions** for up to four players using a fresh short `MARS-XXXX` code each session
 * **One fully shared world** where discoveries, inventory, achievements, time, and victory state update for every player
 * **Host-owned saves** that remain local to the creator; joined worlds are temporary guest sessions
-* **Circular civilization map** with a light interface, zoom controls, and connections that appear as discoveries are made
+* **Four-branch radial civilization tree** with a light interface, zoom/pan controls, one incoming path per discovery, milestone goals, and true recipe details
 
 ## Technical Highlights
 

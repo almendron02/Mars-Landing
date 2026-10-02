@@ -13,6 +13,8 @@ export const ELEMENTS: Element[] = [
   { id: 'rain', name: 'Rain', era: 'Nature', description: 'Water falling from the sky to refresh the soil.' },
   { id: 'plant', name: 'Plant', era: 'Nature', description: 'Green life sprouting from the earth.' },
   { id: 'tree', name: 'Tree', era: 'Nature', description: 'A tall, strong plant with a wooden trunk.' },
+  { id: 'crop', name: 'Crop', era: 'Nature', description: 'A golden corn crop cultivated for food.' },
+  { id: 'forest', name: 'Forest', era: 'Nature', description: 'A thriving gathering of trees growing together.' },
   { id: 'lava', name: 'Lava', era: 'Nature', description: 'Superheated molten stone flowing from the depths.' },
   { id: 'stone', name: 'Stone', era: 'Nature', description: 'Hard, durable material cooled from fire and liquid.' },
   { id: 'wood', name: 'Wood', era: 'Nature', description: 'Natural construction material harvested from trees.' },
@@ -86,4 +88,3 @@ export const ELEMENTS: Element[] = [
 ];
 
 export const STARTING_ELEMENTS = ['air', 'earth', 'fire', 'water'];
-

@@ -232,9 +232,10 @@ export default function PixelIcon({ id, size = 48, className = "" }: PixelIconPr
       case 'crop':
         return (
           <>
-            {/* Crop: Stalk of wheat */}
-            <path d="M12 21V5" stroke={colors.yellowGold} strokeWidth="2" />
-            <path d="M12 6l-3-2 M12 6l3-2 M12 10l-3-2 M12 10l3-2 M12 14l-3-2 M12 14l3-2" stroke={colors.yellowLight} strokeWidth="2" strokeLinecap="round" />
+            {/* Crop: Golden corn cob with green husk */}
+            <path d="M12 3c3 0 5 3 5 8s-2 9-5 9-5-4-5-9 2-8 5-8z" fill={colors.yellowGold} stroke={colors.outline} strokeWidth="2" />
+            <path d="M9 6h6M8 10h8M8 14h8M10 18h4M10 4v15M14 4v15" stroke={colors.yellowLight} strokeWidth="1" strokeLinecap="round" opacity="0.9" />
+            <path d="M8 12c-3 2-3 6-2 9 2-1 4-3 5-6M16 12c3 2 3 6 2 9-2-1-4-3-5-6" fill={colors.greenLight} stroke={colors.outline} strokeWidth="1.5" strokeLinejoin="round" />
           </>
         );
       case 'life':
@@ -281,9 +282,11 @@ export default function PixelIcon({ id, size = 48, className = "" }: PixelIconPr
       case 'forest':
         return (
           <>
-            {/* Forest: Multiple cozy trees */}
-            <path d="M4 19l4-8 2 3 5-6 6 11H4z" fill={colors.greenDark} stroke={colors.outline} strokeWidth="2" />
-            <path d="M12 19V11" stroke={colors.brownDark} strokeWidth="1.5" />
+            {/* Forest: Three distinct evergreen trees */}
+            <path d="M5 20v-4M12 20v-6M19 20v-4" stroke={colors.brownDark} strokeWidth="2" strokeLinecap="round" />
+            <path d="M5 5l-4 7h2l-3 5h10l-3-5h2L5 5z" fill={colors.greenDark} stroke={colors.outline} strokeWidth="1.5" strokeLinejoin="round" />
+            <path d="M12 2L7 10h2l-3 6h12l-3-6h2l-5-8z" fill={colors.greenLight} stroke={colors.outline} strokeWidth="1.5" strokeLinejoin="round" />
+            <path d="M19 6l-4 6h2l-3 5h10l-3-5h2l-4-6z" fill={colors.greenDark} stroke={colors.outline} strokeWidth="1.5" strokeLinejoin="round" />
           </>
         );
       case 'paper':
@@ -346,11 +349,10 @@ export default function PixelIcon({ id, size = 48, className = "" }: PixelIconPr
       case 'food':
         return (
           <>
-            {/* Food: Slice of swiss cheese */}
-            <path d="M4 16L18 5v11H4z" fill={colors.yellowLight} stroke={colors.outline} strokeWidth="2" strokeLinejoin="round" />
-            <circle cx="9" cy="13" r="1" fill={colors.yellowGold} />
-            <circle cx="13" cy="11" r="1.5" fill={colors.yellowGold} />
-            <circle cx="15" cy="14" r="1" fill={colors.yellowGold} />
+            {/* Food: Warm loaf of bread */}
+            <path d="M4 11c0-4 3-7 8-7s8 3 8 7v7H4v-7z" fill={colors.yellowLight} stroke={colors.outline} strokeWidth="2" strokeLinejoin="round" />
+            <path d="M8 7l2 4M12 5l2 5M16 7l1 4" stroke={colors.brownEarth} strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M4 15h16v3H4z" fill={colors.yellowGold} stroke={colors.outline} strokeWidth="1.5" />
           </>
         );
       case 'cooking':
